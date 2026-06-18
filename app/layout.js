@@ -14,6 +14,10 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Student Registrations",
   description: "Manage student registrations",
+  icons: {
+    icon: "/logo.png",
+    type: "image/png", // or "/logo.svg"
+  },
 };
 
 export default function RootLayout({ children }) {
