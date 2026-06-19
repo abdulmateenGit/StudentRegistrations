@@ -3,6 +3,7 @@ import { signup } from "../(auth)/actions";
 
 import { redirectIfAuthenticated } from "../../utils/redirectIfAuthenticated";
 import SubmitButton from '../_components/SubmitButton';
+import PasswordInput from '../_components/PasswordInput';
 
 export default async function SignupPage(props) {
   const params = await Promise.resolve(props.searchParams);
@@ -52,10 +53,9 @@ export default async function SignupPage(props) {
                 >
                   Password
                 </label>
-                <input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   placeholder="Create a strong password"

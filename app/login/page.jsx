@@ -3,6 +3,7 @@ import { login } from '../(auth)/actions';
 
 import { redirectIfAuthenticated } from '../../utils/redirectIfAuthenticated';
 import SubmitButton from '../_components/SubmitButton';
+import PasswordInput from '../_components/PasswordInput';
 import ErrorBanner from '../_components/ErrorBanner';
 
 export default async function LoginPage(props) {
@@ -23,17 +24,24 @@ export default async function LoginPage(props) {
 
           <div className="px-8 py-6">
             {successMessage ? (
-              <div className="mb-4 rounded-md bg-emerald-900/60 px-3 py-2 text-sm text-emerald-100">
-                {successMessage}
-              </div>
-            ) : null}
-            {errorMessage ? (
-              <div className="mb-4 rounded-md bg-red-900/60 px-3 py-2 text-sm text-red-100">
-                {errorMessage}
-              </div>
-            ) : (
-              <ErrorBanner />
-            )}
+            <div className="mb-4 rounded-md bg-emerald-900/60 px-3 py-2 text-sm text-emerald-100">
+              {successMessage}
+            </div>
+          ) : null}
+          {errorMessage ? (
+            <div className="mb-4 rounded-md bg-red-900/60 px-3 py-2 text-sm text-red-100">
+              {errorMessage}
+            </div>
+          ) : (
+            <ErrorBanner />
+          )}
+
+          <div className="mb-4 text-sm text-zinc-400">
+            Forgot your password?{' '}
+            <Link href="/password-reset" className="font-medium text-blue-300 transition hover:text-blue-200">
+              Reset it here.
+            </Link>
+          </div>
 
             <form action={login} className="space-y-4">
               <div className="space-y-2">
@@ -45,9 +53,14 @@ export default async function LoginPage(props) {
 
               <div className="space-y-2">
                 <label htmlFor="password" className="block text-sm text-zinc-300">Password</label>
-                <input id="password" name="password" type="password" autoComplete="current-password" required
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  autoComplete="current-password"
+                  required
                   placeholder="••••••••"
-                  className="w-full rounded-xl bg-zinc-900/70 px-3 py-2.5 text-zinc-100 outline-none ring-1 ring-white/10 transition focus:ring-2 focus:ring-blue-500/60 placeholder:text-zinc-500" />
+                  className="w-full rounded-xl bg-zinc-900/70 px-3 py-2.5 text-zinc-100 outline-none ring-1 ring-white/10 transition focus:ring-2 focus:ring-blue-500/60 placeholder:text-zinc-500"
+                />
               </div>
 
               <div className="pt-2">
