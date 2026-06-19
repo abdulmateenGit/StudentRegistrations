@@ -13,6 +13,8 @@ import {
 import { useRouter } from "next/navigation";
 import PrintInvoiceModal from "../_components/PrintInvoiceModal";
 import LogoutButton from "../_components/LogoutButton";
+import ProfileMenu from "../_components/ProfileMenu";
+import PasswordResetModal from "../_components/PasswordResetModal";
 
 // Storage key
 const STORAGE_KEY = "student_registrations";
@@ -74,6 +76,7 @@ export default function RegistrationsPage() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
 
   useEffect(() => {
     // Load registrations from server API
@@ -239,7 +242,7 @@ export default function RegistrationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-indigo-950">
+    <div className="min-h-screen bg-linear-to-br from-indigo-50 via-white to-violet-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-indigo-950">
       <main className="px-4 py-6 sm:px-6">
         <div className="mx-auto max-w-7xl">
           {/* Header */}
@@ -261,7 +264,7 @@ export default function RegistrationsPage() {
               >
                 New Registration
               </button>
-              <LogoutButton />
+              <ProfileMenu onResetPassword={() => setShowPasswordResetModal(true)} />
             </div>
           </div>
 
@@ -563,6 +566,10 @@ export default function RegistrationsPage() {
           onClose={() => setShowInvoiceModal(false)}
         />
       )}
+      <PasswordResetModal
+        open={showPasswordResetModal}
+        onClose={() => setShowPasswordResetModal(false)}
+      />
     </div>
   );
 }

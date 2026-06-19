@@ -4,12 +4,14 @@ import { signup } from "../(auth)/actions";
 import { redirectIfAuthenticated } from "../../utils/redirectIfAuthenticated";
 import SubmitButton from '../_components/SubmitButton';
 
-export default async function SignupPage() {
+export default async function SignupPage(props) {
+  const params = await Promise.resolve(props.searchParams);
   await redirectIfAuthenticated();
+  const errorMessage = params?.error ?? null;
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(60%_80%_at_50%_0%,#0b1220_0%,#0a0a0b_60%,#060607_100%)] text-zinc-100">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_20%),linear-gradient(to_right,rgba(255,255,255,0.03),transparent_20%)] [mask-image:radial-gradient(ellipse_at_center,black_60%,transparent_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_20%),linear-gradient(to_right,rgba(255,255,255,0.03),transparent_20%)] mask-[radial-gradient(ellipse_at_center,black_60%,transparent_100%)]" />
       <div className="relative mx-auto flex min-h-screen max-w-7xl items-center justify-center p-4">
         <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_10px_50px_rgba(0,0,0,0.45)]">
           <div className="border-b border-white/10 px-8 py-6">
@@ -22,6 +24,11 @@ export default async function SignupPage() {
           </div>
 
           <div className="px-8 py-6">
+            {errorMessage ? (
+              <div className="mb-4 rounded-md bg-red-900/60 px-3 py-2 text-sm text-red-100">
+                {errorMessage}
+              </div>
+            ) : null}
             <form action={signup} className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="email" className="block text-sm text-zinc-300">

@@ -9,6 +9,7 @@ export default async function LoginPage(props) {
   const params = await Promise.resolve(props.searchParams);
   await redirectIfAuthenticated();
   const errorMessage = params?.error ?? null;
+  const successMessage = params?.message ?? null;
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(60%_80%_at_50%_0%,#0b1220_0%,#0a0a0b_60%,#060607_100%)] text-zinc-100">
@@ -21,6 +22,11 @@ export default async function LoginPage(props) {
           </div>
 
           <div className="px-8 py-6">
+            {successMessage ? (
+              <div className="mb-4 rounded-md bg-emerald-900/60 px-3 py-2 text-sm text-emerald-100">
+                {successMessage}
+              </div>
+            ) : null}
             {errorMessage ? (
               <div className="mb-4 rounded-md bg-red-900/60 px-3 py-2 text-sm text-red-100">
                 {errorMessage}
