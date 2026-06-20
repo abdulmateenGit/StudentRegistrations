@@ -14,24 +14,17 @@ const PrintInvoiceModal = ({ student, onClose }) => {
 
   if (!student) return null;
 
-  // React-To-Print hook - handles printing without popups
-  const handlePrint = useReactToPrint({
-    content: () => {
-      const content = printRef.current;
-      if (!content) {
-        console.error("Print content not found");
-        return null;
-      }
-      return content;
-    },
+  // React-To-Print hook (v3+ API: uses contentRef, not content)
+  const reactToPrintFn = useReactToPrint({
+    contentRef: printRef,
     documentTitle: `Invoice_${student.studentName || "Student"}_${Date.now()}`,
-    onBeforeGetContent: () => {
+    onBeforePrint: () => {
       setIsPrinting(true);
+      return Promise.resolve();
     },
     onAfterPrint: () => {
       setIsPrinting(false);
     },
-    removeAfterPrint: false,
     pageStyle: `
       @page {
         size: A4 portrait;
@@ -54,6 +47,15 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       }
     `,
   });
+
+  // Guarded wrapper in case the ref isn't attached yet
+  const handlePrint = () => {
+    if (!printRef.current) {
+      console.error("Print content not found (ref not ready)");
+      return;
+    }
+    reactToPrintFn();
+  };
 
   // Function to download PDF
   const downloadPDF = async () => {
