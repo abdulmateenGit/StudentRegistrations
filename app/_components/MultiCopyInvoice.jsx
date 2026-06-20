@@ -268,8 +268,8 @@ const styles = {
     fontWeight: "bold",
     borderBottom: "1px solid #000",
     paddingLeft: "4px", // Reduced from 6px to 4px
-    paddingBottom: "1px", // Reduced from 2px to 1px
-    marginBottom: "0px",
+    paddingBottom: "2px", // Reduced from 2px to 1px
+    marginBottom: "2px",
     display: "inline-block",
     minWidth: "100px", // Reduced from 120px to 100px
     color: "#000",
@@ -315,8 +315,8 @@ const styles = {
     borderBottom: "1px dotted #333",
     fontWeight: "bold",
     paddingLeft: "6px", // Reduced from 8px to 6px
-    paddingBottom: "1px", // Reduced from 2px to 1px
-    marginBottom: "0px",
+    paddingBottom: "2px", // Reduced from 2px to 1px
+    marginBottom: "2px",
     color: "#000",
     lineHeight: "1.2", // Reduced from 1.3 to 1.2
   },
@@ -325,8 +325,8 @@ const styles = {
     borderBottom: "1px dotted #333",
     fontWeight: "bold",
     paddingLeft: "6px", // Reduced from 8px to 6px
-    paddingBottom: "1px", // Reduced from 2px to 1px
-    marginBottom: "0px",
+    paddingBottom: "2px", // Reduced from 2px to 1px
+    marginBottom: "2px",
     color: "#000",
     lineHeight: "1.2", // Reduced from 1.3 to 1.2
   },
