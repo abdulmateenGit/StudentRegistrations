@@ -220,7 +220,6 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    // borderBottom: "2px solid #000",
     paddingBottom: "6px",
     marginBottom: "8px",
   },
@@ -235,8 +234,6 @@ const styles = {
   schoolLocation: { fontSize: "14px", color: "#000", marginTop: "1px" },
   receiptBadge: {
     display: "inline-block",
-    // border: "1.5px solid #000",
-    borderBottom: "none",
     fontWeight: "bold",
     fontSize: "13px",
     padding: "3px 20px",
@@ -255,7 +252,7 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "14px",
+    marginBottom: "10px", // REDUCED from 14px to 10px
   },
   datedField: { fontSize: "14px", color: "#000" },
   receiptNoField: { fontSize: "14px", color: "#000" },
@@ -263,21 +260,26 @@ const styles = {
     fontWeight: "bold",
     borderBottom: "1px solid #000",
     paddingLeft: "6px",
-    paddingBottom: "4px", 
-    marginBottom: "2px",
+    paddingBottom: "2px",
+    marginBottom: "0px",
     display: "inline-block",
     minWidth: "120px",
     color: "#000",
+    lineHeight: "1.3",
   },
   receiptBody: {
     display: "flex",
     flexDirection: "column",
-    gap: "14px", // Fixed space step between data fields
+    gap: "10px", // REDUCED spacing between rows
     flex: 1,
     justifyContent: "center",
   },
   formLine: { display: "flex", alignItems: "baseline", fontSize: "14px" },
-  formRow: { display: "flex", gap: "40px", alignItems: "baseline" },
+  formRow: { 
+    display: "flex", 
+    gap: "40px", // REDUCED from 50px to 40px
+    alignItems: "baseline" 
+  },
   formLineInline: {
     display: "flex",
     alignItems: "baseline",
@@ -301,31 +303,36 @@ const styles = {
     borderBottom: "1px dotted #333",
     fontWeight: "bold",
     paddingLeft: "8px",
-    paddingBottom: "4px", 
-    marginBottom: "2px",
+    paddingBottom: "2px",
+    marginBottom: "0px",
     color: "#000",
-    lineHeight: "1.2",
+    lineHeight: "1.3",
   },
   fillBlankInline: {
     flex: 1,
     borderBottom: "1px dotted #333",
     fontWeight: "bold",
     paddingLeft: "8px",
-    paddingBottom: "4px",
-    marginBottom: "2px",
+    paddingBottom: "2px",
+    marginBottom: "0px",
     color: "#000",
-    lineHeight: "1.2",
+    lineHeight: "1.3",
   },
   receiptFooter: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-end",
-    marginTop: "100px",
+    marginTop: "15px", // REDUCED from 20px to 15px
+    gap: "30px",
   },
-  signatureBlock: { textAlign: "center", width: "220px" },
+  signatureBlock: { 
+    textAlign: "center", 
+    width: "220px",
+    marginTop: "35px", // REDUCED from 10px to 5px
+  },
   signatureLine: {
     borderTop: "1.5px solid #000",
-    paddingTop: "6px",
+    paddingTop: "6px", // REDUCED from 6px to 4px
     fontSize: "11px",
     fontWeight: "bold",
     textTransform: "uppercase",

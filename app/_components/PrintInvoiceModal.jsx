@@ -9,23 +9,36 @@ import jsPDF from 'jspdf';
 const PrintInvoiceModal = ({ student, onClose }) => {
   const printRef = useRef(null);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   if (!student) return null;
 
   // Function to download PDF
   const downloadPDF = async () => {
     try {
-      setIsPrinting(true);
+      setIsDownloading(true);
       
       const element = printRef.current;
       if (!element) {
         console.error('Print element not found');
+        setIsDownloading(false);
         return;
       }
 
-      // Show loading toast or indicator
+      // Wait for images to load
+      const images = element.querySelectorAll('img');
+      await Promise.all(
+        Array.from(images).map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        })
+      );
+
       const canvas = await html2canvas(element, {
-        scale: 2, // Higher quality
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
@@ -33,6 +46,13 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         width: element.scrollWidth,
         height: element.scrollHeight,
         windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById('invoice-print-area');
+          if (clonedElement) {
+            clonedElement.style.transform = 'none';
+          }
+        }
       });
 
       const imgData = canvas.toDataURL('image/png');
@@ -47,13 +67,12 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Invoice_${student.studentName}_${Date.now()}.pdf`);
+      pdf.save(`Invoice_${student.studentName || 'Student'}_${Date.now()}.pdf`);
 
-      setIsPrinting(false);
+      setIsDownloading(false);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      setIsPrinting(false);
-      // Fallback to print
+      setIsDownloading(false);
       handlePrint();
     }
   };
@@ -70,7 +89,6 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       const printWindow = window.open('', '_blank', 'width=900,height=1200');
       
       if (!printWindow) {
-        // Fallback: use current window
         window.print();
         return;
       }
@@ -82,7 +100,7 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         <!DOCTYPE html>
         <html>
           <head>
-            <title>Invoice - ${student.studentName}</title>
+            <title>Invoice - ${student.studentName || 'Student'}</title>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>${styles}</style>
@@ -104,7 +122,6 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       printWindow.focus();
     } catch (error) {
       console.error('Error printing:', error);
-      // Ultimate fallback
       window.print();
     }
   };
@@ -112,16 +129,15 @@ const PrintInvoiceModal = ({ student, onClose }) => {
   // Combined function: Print + Download PDF
   const handlePrintAndDownload = async () => {
     try {
-      // First download PDF
+      setIsPrinting(true);
       await downloadPDF();
-      
-      // Then show print dialog after a short delay
       setTimeout(() => {
         handlePrint();
+        setIsPrinting(false);
       }, 500);
     } catch (error) {
       console.error('Error in print and download:', error);
-      // If PDF fails, at least try to print
+      setIsPrinting(false);
       handlePrint();
     }
   };
@@ -185,23 +201,27 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         margin: 0 auto;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 4px; /* REDUCED from 12px */
+        padding: 0;
       }
       
       .receipt-card {
         background: #fff;
-        padding: 4px 12px;
+        padding: 8px 12px; /* REDUCED from 15px 20px */
         border: 1px dashed #777;
+        border-radius: 2px;
         position: relative;
         page-break-inside: avoid;
+        break-inside: avoid;
       }
       
       .receipt-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        padding-bottom: 2px;
-        margin-bottom: 2px;
+        border-bottom: none;
+        padding-bottom: 2px; /* REDUCED from 6px */
+        margin-bottom: 3px; /* REDUCED from 8px */
       }
       
       .header-left-spacer {
@@ -214,66 +234,75 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       }
       
       .school-title {
-        font-size: 24px;
-        font-weight: normal;
+        font-size: 20px; /* REDUCED from 22px */
+        font-weight: bold;
         margin: 0;
         letter-spacing: 0.5px;
+        color: #000;
       }
       
       .school-location {
-        font-size: 14px;
-        margin: 2px 0 5px 0;
+        font-size: 13px; /* REDUCED from 14px */
+        margin: 1px 0 3px 0; /* REDUCED margin */
+        color: #000;
       }
       
       .receipt-badge {
         display: inline-block;
-        border: 2px solid #000;
+        border: none;
         font-weight: bold;
-        font-size: 14px;
-        padding: 3px 12px;
-        letter-spacing: 1px;
+        font-size: 12px; /* REDUCED from 13px */
+        padding: 2px 15px; /* REDUCED from 3px 20px */
+        margin-top: 3px; /* REDUCED from 6px */
+        letter-spacing: 0.5px;
+        color: #000;
       }
       
       .copy-tag {
         width: 150px;
         text-align: right;
-        font-size: 13px;
+        font-size: 12px; /* REDUCED from 13px */
         font-weight: 500;
-        margin-top: 5px;
+        color: #333;
+        margin-top: 3px; /* REDUCED from 5px */
       }
       
       .meta-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 15px;
+        margin-bottom: 6px; /* REDUCED from 14px */
         width: 100%;
       }
       
       .receipt-no-field {
-        font-size: 13px;
+        font-size: 13px; /* REDUCED from 14px */
         text-align: left;
+        color: #000;
       }
       
       .dated-field {
-        font-size: 13px;
+        font-size: 13px; /* REDUCED from 14px */
         text-align: right;
+        color: #000;
       }
       
       .meta-span {
         font-weight: bold;
-        border-bottom: 1px solid #111;
-        padding-bottom: 1px;
+        border-bottom: 1px solid #000;
+        padding: 0 6px 2px 6px; /* REDUCED padding-bottom from 4px to 2px */
         display: inline-block;
-        min-width: 70px;
+        min-width: 100px; /* REDUCED from 120px */
+        color: #000;
+        line-height: 1.2; /* REDUCED from 1.4 */
       }
       
       .receipt-body {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        font-size: 14px;
-        margin-bottom: 15px;
+        gap: 4px; /* REDUCED from 10px to 4px */
+        font-size: 13px; /* REDUCED from 14px */
+        margin-bottom: 8px; /* REDUCED from 15px */
       }
       
       .form-line {
@@ -283,65 +312,75 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       
       .label {
         white-space: nowrap;
-        padding-right: 10px;
-        color: #444;
+        padding-right: 8px; /* REDUCED from 10px */
+        color: #000;
+        font-weight: normal;
         min-width: 180px;
-        font-size: 13px;
+        font-size: 13px; /* REDUCED from 14px */
       }
       
       .label-small {
         white-space: nowrap;
-        padding-right: 10px;
-        color: #444;
+        padding-right: 8px; /* REDUCED from 10px */
+        color: #000;
+        font-weight: normal;
         min-width: 110px;
-        font-size: 13px;
+        font-size: 13px; /* REDUCED from 14px */
       }
       
       .label-tiny {
         white-space: nowrap;
-        padding-right: 8px;
-        color: #444;
+        padding-right: 6px; /* REDUCED from 8px */
+        color: #000;
+        font-weight: normal;
         min-width: 55px;
-        font-size: 13px;
+        font-size: 13px; /* REDUCED from 14px */
       }
       
       .fill-blank {
         flex-grow: 1;
-        border-bottom: 1px dotted #444;
+        border-bottom: 1px dotted #333;
         font-weight: bold;
-        padding-left: 5px;
+        padding: 0 5px 2px 5px; /* REDUCED padding-bottom from 4px to 2px */
         color: #000;
+        line-height: 1.2; /* REDUCED from 1.4 */
+        font-size: 13px; /* ADDED */
       }
       
       .fill-blank-small {
         flex-grow: 1;
-        border-bottom: 1px dotted #444;
+        border-bottom: 1px dotted #333;
         font-weight: bold;
-        padding-left: 5px;
+        padding: 0 5px 2px 5px; /* REDUCED padding-bottom from 4px to 2px */
         color: #000;
+        line-height: 1.2; /* REDUCED from 1.4 */
         min-width: 180px;
+        font-size: 13px; /* ADDED */
       }
       
       .fill-blank-tiny {
         flex-grow: 1;
-        border-bottom: 1px dotted #444;
+        border-bottom: 1px dotted #333;
         font-weight: bold;
-        padding-left: 5px;
+        padding: 0 5px 2px 5px; /* REDUCED padding-bottom from 4px to 2px */
         color: #000;
+        line-height: 1.2; /* REDUCED from 1.4 */
         min-width: 80px;
+        font-size: 13px; /* ADDED */
       }
       
       .two-column-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        align-items: center;
+        gap: 20px; /* REDUCED from 30px */
+        align-items: baseline;
       }
       
       .three-column-row {
         display: grid;
         grid-template-columns: 2fr 1fr 1fr;
-        gap: 10px;
+        gap: 15px; /* REDUCED from 20px */
+        align-items: baseline;
       }
       
       .form-line-compact {
@@ -353,24 +392,27 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       .receipt-footer {
         display: flex;
         justify-content: space-between;
-        margin-top: 35px;
-        padding-top: 20px;
+        align-items: flex-end;
+        margin-top: 8px; /* REDUCED from 20px to 8px */
+        padding-top: 0;
+        gap: 30px;
       }
       
       .signature-block {
         text-align: center;
-        width: 200px;
+        width: 220px;
+        margin-top: 5px; /* REDUCED from 10px */
       }
       
       .signature-line {
-        border-top: 1px solid #000;
-        margin-top: 20px;
-        font-size: 11px;
+        border-top: 1.5px solid #000;
+        padding-top: 4px; /* REDUCED from 6px */
+        font-size: 10px; /* REDUCED from 11px */
         font-weight: bold;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #333;
-        padding-top: 15px;
+        letter-spacing: 0.3px;
+        color: #000;
+        margin-top: 0;
       }
       
       @media print {
@@ -386,8 +428,25 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         .receipt-card {
           box-shadow: none !important;
           page-break-inside: avoid !important;
-          margin-bottom: 10px !important;
+          break-inside: avoid !important;
+          margin-bottom: 4px !important; /* REDUCED from 10px */
+          border: 1px dashed #555 !important;
+          padding: 8px 12px !important;
         }
+        
+        .receipts-container {
+          gap: 4px !important; /* REDUCED from 12px */
+          padding: 0 !important;
+        }
+        
+        .receipt-body {
+          gap: 4px !important;
+        }
+      }
+      
+      @page {
+        margin: 8mm; /* REDUCED from 10mm */
+        size: A4;
       }
     `;
   };
@@ -397,7 +456,8 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       <div className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 dark:bg-zinc-900">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-20 rounded-lg p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="absolute right-4 top-4 z-20 rounded-lg p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          aria-label="Close modal"
         >
           <X size={20} />
         </button>
@@ -408,28 +468,28 @@ const PrintInvoiceModal = ({ student, onClose }) => {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 transition-colors"
-                disabled={isPrinting}
+                className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isDownloading || isPrinting}
               >
                 <Printer size={18} />
                 Print Only
               </button>
               <button
                 onClick={downloadPDF}
-                className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 transition-colors"
-                disabled={isPrinting}
+                className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isDownloading || isPrinting}
               >
                 <Download size={18} />
-                {isPrinting ? 'Generating...' : 'Download PDF'}
+                {isDownloading ? 'Generating...' : 'Download PDF'}
               </button>
               <button
                 onClick={handlePrintAndDownload}
-                className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 transition-colors"
-                disabled={isPrinting}
+                className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isDownloading || isPrinting}
               >
                 <Printer size={18} />
                 <Download size={18} />
-                Print & Download
+                {isPrinting ? 'Processing...' : 'Print & Download'}
               </button>
             </div>
           </div>
@@ -437,7 +497,7 @@ const PrintInvoiceModal = ({ student, onClose }) => {
           <div id="invoice-print-area" ref={printRef}>
             <MultiCopyInvoice 
               student={student} 
-              receiptNumber={student.id || 1} 
+              receiptNumber={student.id || student.receiptNumber || 1} 
             />
           </div>
         </div>
