@@ -1,3 +1,4 @@
+// Invoice.jsx
 "use client";
 
 import Image from "next/image";
@@ -74,59 +75,79 @@ const Invoice = ({ student, receiptNumber }) => {
   };
 
   const formatReceiptNumber = (num) => {
-    return num.toString().padStart(6, "0");
+    return num.toString().padStart(3, "0");
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "05-May-26";
+    return dateStr;
   };
 
   return (
     <div className="invoice" style={styles.invoice}>
       {/* Header */}
-      <div style={styles.header} className="flex items-center gap-6">
-        <div className="flex-shrink-0">
+      <div style={styles.header}>
+        <div style={styles.headerLeft}>
           <Image
             src="/Trinity.png"
-            alt="Trinity School Lahore logo"
-            width={140}
-            height={175}
-            className="h-32 w-auto object-contain sm:h-36"
+            alt="Trinity School Lahore"
+            width={80}
+            height={100}
             priority
           />
         </div>
-        <div className="items-center">
+        <div style={styles.headerCenter}>
           <h2 style={styles.schoolName}>The Trinity School</h2>
           <p style={styles.schoolAddress}>Lahore</p>
           <h3 style={styles.receiptTitle}>CASH RECEIPT</h3>
+          <p style={styles.receiptSubTitle}>Personal File Copy</p>
+        </div>
+        <div style={styles.headerRight}>
+          <div style={styles.receiptNumberBox}>
+            <span style={styles.receiptNumberLabel}>Receipt #:</span>
+            <span style={styles.receiptNumber}>
+              {formatReceiptNumber(receiptNumber)}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Receipt Number */}
-      <div style={styles.receiptNumberContainer}>
-        <span style={styles.receiptNumberLabel}>Receipt #:</span>
-        <span style={styles.receiptNumber}>
-          {formatReceiptNumber(receiptNumber)}
+      {/* Date and Receipt Info */}
+      <div style={styles.metaRow}>
+        <span style={styles.datedText}>
+          Dated:{" "}
+          <span style={styles.datedValue}>
+            {formatDate(student.registrationDate)}
+          </span>
         </span>
       </div>
 
       {/* Main Content */}
       <div style={styles.content}>
         <p style={styles.receivedLine}>
-          Received with thanks from Mr./Ms./Mrs.
-          <span style={styles.parentName}> {student.parentName}</span>
+          <span style={styles.receivedPrefix}>
+            Received with thanks from Mr./Ms./Mrs.
+          </span>
+          <span style={styles.parentName}>{student.parentName}</span>
         </p>
 
         <p style={styles.studentLine}>
-          Student&apos;s Name:{" "}
+          Student's Name:{" "}
           <span style={styles.studentName}>{student.studentName}</span>
         </p>
 
         <div style={styles.amountRow}>
           <span style={styles.amountLabel}>a sum of Rs.:</span>
-          <span style={styles.amount}>
+          <span style={styles.amountValue}>
             {student.registrationFee.toLocaleString()}
           </span>
         </div>
 
         <p style={styles.classLine}>
-          Class: <span style={styles.className}>{student.class || "N/A"}</span>
+          Class:{" "}
+          <span style={styles.className}>
+            {student.class?.toUpperCase() || "N/A"}
+          </span>
         </p>
 
         <p style={styles.wordsLine}>
@@ -142,143 +163,191 @@ const Invoice = ({ student, receiptNumber }) => {
         </p>
       </div>
 
-      {/* Signatures */}
-      <div style={styles.signatures}>
-        <div style={styles.signatureLeft}>
-          <p>___________________</p>
+      {/* Signature */}
+      <div style={styles.signatureSection}>
+        <div style={styles.signatureBox}>
+          <p style={styles.signatureLine}>___________________</p>
           <p style={styles.signatureTitle}>ACCOUNT OFFICER</p>
-        </div>
-        <div style={styles.signatureRight}>
-          <p>___________________</p>
-          <p style={styles.signatureTitle}>ASSISTANT MANAGER ACCOUNTS</p>
         </div>
       </div>
     </div>
   );
 };
 
-const styles: { [key: string]: React.CSSProperties } = {
+const styles = {
   invoice: {
     width: "100%",
     maxWidth: "800px",
     margin: "0 auto",
-    padding: "30px",
+    padding: "30px 40px",
     backgroundColor: "white",
     fontFamily: "Arial, sans-serif",
-    border: "1px solid #ddd",
+    border: "1px solid #ccc",
     borderRadius: "4px",
-    position: "relative",
   },
   header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottom: "1px solid #ccc",
+    paddingBottom: "15px",
+    marginBottom: "15px",
+  },
+  headerLeft: {
+    flex: "0 0 auto",
+  },
+  headerCenter: {
+    flex: "1",
     textAlign: "center",
-    marginBottom: "20px",
-    borderBottom: "1px solid #ddd",
-    paddingBottom: "10px",
+  },
+  headerRight: {
+    flex: "0 0 auto",
+    alignSelf: "flex-start",
+    marginTop: "5px",
   },
   schoolName: {
     margin: "0",
-    fontSize: "24px",
+    fontSize: "22px",
     fontWeight: "bold",
     color: "#000",
+    letterSpacing: "0.5px",
   },
   schoolAddress: {
-    margin: "5px 0",
+    margin: "2px 0",
     fontSize: "14px",
-    color: "#666",
+    color: "#000",
   },
   receiptTitle: {
-    margin: "10px 0 0",
-    fontSize: "18px",
+    margin: "8px 0 0",
+    fontSize: "16px",
     fontWeight: "bold",
     textTransform: "uppercase",
+    letterSpacing: "1px",
   },
-  receiptNumberContainer: {
-    textAlign: "right",
-    marginBottom: "20px",
+  receiptSubTitle: {
+    margin: "2px 0 0",
     fontSize: "12px",
+    color: "#666",
+    fontWeight: "bold",
+  },
+  receiptNumberBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: "5px",
+    fontSize: "13px",
+    fontWeight: "bold",
   },
   receiptNumberLabel: {
     fontWeight: "bold",
   },
   receiptNumber: {
-    marginLeft: "5px",
+    fontWeight: "bold",
+  },
+  metaRow: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginBottom: "15px",
+    fontSize: "13px",
+  },
+  datedText: {
+    fontWeight: "normal",
+  },
+  datedValue: {
+    fontWeight: "bold",
+    textDecoration: "underline",
   },
   content: {
     marginBottom: "30px",
   },
   receivedLine: {
-    margin: "10px 0",
+    margin: "8px 0",
     fontSize: "14px",
-    lineHeight: "1.5",
+    lineHeight: "1.6",
+  },
+  receivedPrefix: {
+    marginRight: "5px",
   },
   parentName: {
     fontWeight: "bold",
     textDecoration: "underline",
   },
   studentLine: {
-    margin: "10px 0",
+    margin: "8px 0",
     fontSize: "14px",
-    lineHeight: "1.5",
+    lineHeight: "1.6",
   },
   studentName: {
     fontWeight: "bold",
+    textDecoration: "underline",
   },
   amountRow: {
-    margin: "10px 0",
+    margin: "8px 0",
     fontSize: "14px",
-    lineHeight: "1.5",
+    lineHeight: "1.6",
+    display: "flex",
+    alignItems: "baseline",
   },
   amountLabel: {
-    fontWeight: "bold",
+    marginRight: "5px",
   },
-  amount: {
+  amountValue: {
     fontWeight: "bold",
-    marginLeft: "5px",
+    textDecoration: "underline",
   },
   classLine: {
-    margin: "10px 0",
+    margin: "8px 0",
     fontSize: "14px",
-    lineHeight: "1.5",
+    lineHeight: "1.6",
   },
   className: {
     fontWeight: "bold",
+    textDecoration: "underline",
   },
   wordsLine: {
-    margin: "10px 0",
+    margin: "8px 0",
     fontSize: "14px",
-    lineHeight: "1.5",
+    lineHeight: "1.6",
   },
   wordsAmount: {
     fontWeight: "bold",
+    textDecoration: "underline",
   },
   accountLine: {
-    margin: "10px 0",
+    margin: "8px 0",
     fontSize: "14px",
-    lineHeight: "1.5",
+    lineHeight: "1.6",
   },
   accountType: {
     fontWeight: "bold",
     textDecoration: "underline",
   },
-  signatures: {
+  signatureSection: {
     display: "flex",
-    justifyContent: "space-between",
-    marginTop: "40px",
+    justifyContent: "flex-end",
+    marginTop: "30px",
     paddingTop: "20px",
-    borderTop: "1px solid #ddd",
+    borderTop: "1px solid #ccc",
   },
-  signatureLeft: {
+  signatureBox: {
     textAlign: "center",
-    flex: 1,
+    width: "200px",
   },
-  signatureRight: {
-    textAlign: "center",
-    flex: 1,
+  signatureName: {
+    fontSize: "13px",
+    fontWeight: "bold",
+    margin: "0 0 5px",
+    color: "#000",
+  },
+  signatureLine: {
+    margin: "5px 0",
+    fontSize: "14px",
+    color: "#000",
   },
   signatureTitle: {
-    fontSize: "12px",
+    fontSize: "11px",
     fontWeight: "bold",
-    marginTop: "5px",
+    margin: "5px 0 0",
+    letterSpacing: "0.5px",
   },
 };
 
