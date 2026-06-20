@@ -75,7 +75,6 @@ const MultiCopyInvoice = ({ student, receiptNumber }) => {
   };
 
   const formatReceiptNumber = (num) => {
-    // Gracefully handles UUIDs or raw fallback digits matching original styles
     return num?.toString() || "557";
   };
 
@@ -114,7 +113,7 @@ const MultiCopyInvoice = ({ student, receiptNumber }) => {
           </div>
         </div>
 
-        {/* Receipt Body with cleaner spacing and explicitly forced dot-gaps */}
+        {/* Receipt Body */}
         <div style={styles.receiptBody}>
           <div style={styles.formLine}>
             <span style={styles.label}>
@@ -135,7 +134,6 @@ const MultiCopyInvoice = ({ student, receiptNumber }) => {
             </div>
             <div style={styles.formLineInline}>
               <span style={styles.labelInline}>Roll #:</span>
-              {/* Force blank content as requested */}
               <span style={styles.fillBlankInline}>&nbsp;</span>
             </div>
           </div>
@@ -199,15 +197,15 @@ const styles = {
     margin: "0 auto",
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
-    padding: "12mm 10mm",
+    gap: "6px", // Reduced from 12px to 6px
+    padding: "6mm 8mm", // Reduced from 12mm 10mm to 6mm 8mm
     backgroundColor: "#fff",
     boxSizing: "border-box",
     fontFamily: "Arial, Helvetica, sans-serif",
   },
   receiptCard: {
     background: "#fff",
-    padding: "15px 20px",
+    padding: "10px 15px", // Reduced from 15px 20px to 10px 15px
     border: "1px dashed #555",
     borderRadius: "4px",
     display: "flex",
@@ -220,31 +218,35 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingBottom: "6px",
-    marginBottom: "8px",
+    paddingBottom: "3px", // Reduced from 6px to 3px
+    marginBottom: "4px", // Reduced from 8px to 4px
   },
   headerLeft: { width: "120px" },
   headerCenter: { textAlign: "center", flex: 1 },
   schoolTitle: {
-    fontSize: "22px",
+    fontSize: "20px", // Reduced from 22px to 20px
     fontWeight: "bold",
     color: "#000",
     letterSpacing: "0.5px",
   },
-  schoolLocation: { fontSize: "14px", color: "#000", marginTop: "1px" },
+  schoolLocation: { 
+    fontSize: "12px", // Reduced from 14px to 12px
+    color: "#000", 
+    marginTop: "0px" // Reduced from 1px to 0px
+  },
   receiptBadge: {
     display: "inline-block",
     fontWeight: "bold",
-    fontSize: "13px",
-    padding: "3px 20px",
-    marginTop: "6px",
+    fontSize: "12px", // Reduced from 13px to 12px
+    padding: "2px 15px", // Reduced from 3px 20px to 2px 15px
+    marginTop: "3px", // Reduced from 6px to 3px
     color: "#000",
     letterSpacing: "0.5px",
   },
   copyTag: {
     width: "150px",
     textAlign: "right",
-    fontSize: "13px",
+    fontSize: "12px", // Reduced from 13px to 12px
     fontWeight: "bold",
     color: "#333",
   },
@@ -252,88 +254,98 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "10px", // REDUCED from 14px to 10px
+    marginBottom: "6px", // Reduced from 10px to 6px
   },
-  datedField: { fontSize: "14px", color: "#000" },
-  receiptNoField: { fontSize: "14px", color: "#000" },
+  datedField: { 
+    fontSize: "12px", // Reduced from 14px to 12px
+    color: "#000" 
+  },
+  receiptNoField: { 
+    fontSize: "12px", // Reduced from 14px to 12px
+    color: "#000" 
+  },
   metaSpan: {
     fontWeight: "bold",
     borderBottom: "1px solid #000",
-    paddingLeft: "6px",
-    paddingBottom: "2px",
+    paddingLeft: "4px", // Reduced from 6px to 4px
+    paddingBottom: "1px", // Reduced from 2px to 1px
     marginBottom: "0px",
     display: "inline-block",
-    minWidth: "120px",
+    minWidth: "100px", // Reduced from 120px to 100px
     color: "#000",
-    lineHeight: "1.3",
+    lineHeight: "1.2", // Reduced from 1.3 to 1.2
   },
   receiptBody: {
     display: "flex",
     flexDirection: "column",
-    gap: "10px", // REDUCED spacing between rows
+    gap: "6px", // Reduced from 10px to 6px
     flex: 1,
     justifyContent: "center",
   },
-  formLine: { display: "flex", alignItems: "baseline", fontSize: "14px" },
+  formLine: { 
+    display: "flex", 
+    alignItems: "baseline", 
+    fontSize: "13px" // Reduced from 14px to 13px
+  },
   formRow: { 
     display: "flex", 
-    gap: "40px", // REDUCED from 50px to 40px
+    gap: "30px", // Reduced from 40px to 30px
     alignItems: "baseline" 
   },
   formLineInline: {
     display: "flex",
     alignItems: "baseline",
-    fontSize: "14px",
+    fontSize: "13px", // Reduced from 14px to 13px
     flex: 1,
   },
   label: {
     color: "#000",
     fontWeight: "normal",
-    marginRight: "8px",
+    marginRight: "6px", // Reduced from 8px to 6px
     whiteSpace: "nowrap",
   },
   labelInline: {
     color: "#000",
     fontWeight: "normal",
-    marginRight: "8px",
+    marginRight: "6px", // Reduced from 8px to 6px
     whiteSpace: "nowrap",
   },
   fillBlank: {
     flex: 1,
     borderBottom: "1px dotted #333",
     fontWeight: "bold",
-    paddingLeft: "8px",
-    paddingBottom: "2px",
+    paddingLeft: "6px", // Reduced from 8px to 6px
+    paddingBottom: "1px", // Reduced from 2px to 1px
     marginBottom: "0px",
     color: "#000",
-    lineHeight: "1.3",
+    lineHeight: "1.2", // Reduced from 1.3 to 1.2
   },
   fillBlankInline: {
     flex: 1,
     borderBottom: "1px dotted #333",
     fontWeight: "bold",
-    paddingLeft: "8px",
-    paddingBottom: "2px",
+    paddingLeft: "6px", // Reduced from 8px to 6px
+    paddingBottom: "1px", // Reduced from 2px to 1px
     marginBottom: "0px",
     color: "#000",
-    lineHeight: "1.3",
+    lineHeight: "1.2", // Reduced from 1.3 to 1.2
   },
   receiptFooter: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-end",
-    marginTop: "15px", // REDUCED from 20px to 15px
+    marginTop: "10px", // Reduced from 15px to 10px
     gap: "30px",
   },
   signatureBlock: { 
     textAlign: "center", 
-    width: "220px",
-    marginTop: "35px", // REDUCED from 10px to 5px
+    width: "200px", // Reduced from 220px to 200px
+    marginTop: "25px", // Reduced from 35px to 25px
   },
   signatureLine: {
     borderTop: "1.5px solid #000",
-    paddingTop: "6px", // REDUCED from 6px to 4px
-    fontSize: "11px",
+    paddingTop: "4px", // Kept at 4px
+    fontSize: "10px", // Reduced from 11px to 10px
     fontWeight: "bold",
     textTransform: "uppercase",
     color: "#000",
