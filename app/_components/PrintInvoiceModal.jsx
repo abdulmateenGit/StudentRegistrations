@@ -5,6 +5,7 @@ import { X, Printer, Download } from "./Icons";
 import MultiCopyInvoice from "./MultiCopyInvoice";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { useReactToPrint } from "react-to-print";
 
 const PrintInvoiceModal = ({ student, onClose }) => {
   const printRef = useRef(null);
@@ -12,6 +13,47 @@ const PrintInvoiceModal = ({ student, onClose }) => {
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!student) return null;
+
+  // React-To-Print hook - handles printing without popups
+  const handlePrint = useReactToPrint({
+    content: () => {
+      const content = printRef.current;
+      if (!content) {
+        console.error("Print content not found");
+        return null;
+      }
+      return content;
+    },
+    documentTitle: `Invoice_${student.studentName || "Student"}_${Date.now()}`,
+    onBeforeGetContent: () => {
+      setIsPrinting(true);
+    },
+    onAfterPrint: () => {
+      setIsPrinting(false);
+    },
+    removeAfterPrint: false,
+    pageStyle: `
+      @page {
+        size: A4 portrait;
+        margin: 10mm 12mm 10mm 12mm;
+      }
+      @media print {
+        .receipts-container {
+          padding: 0 !important;
+          margin: 0 auto !important;
+          gap: 4px !important;
+        }
+        .receipt-card {
+          box-shadow: none !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          margin-bottom: 4px !important;
+          border: 1px dashed #555 !important;
+          padding: 8px 12px !important;
+        }
+      }
+    `,
+  });
 
   // Function to download PDF
   const downloadPDF = async () => {
@@ -73,96 +115,9 @@ const PrintInvoiceModal = ({ student, onClose }) => {
     } catch (error) {
       console.error("Error generating PDF:", error);
       setIsDownloading(false);
+      // Fallback to print if PDF fails
       handlePrint();
     }
-  };
-
-  // Function to show print dialog
-  const handlePrint = () => {
-    const printContent = document.getElementById("invoice-print-area");
-
-    if (!printContent) {
-      console.error("Print area not found");
-      return;
-    }
-
-    const printWindow = window.open("", "_blank");
-
-    if (!printWindow) {
-      alert("Please allow popups for printing.");
-      return;
-    }
-
-    printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Invoice</title>
-
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-
-          html,
-          body {
-            width: 100%;
-            background: white;
-            font-family: Arial, sans-serif;
-          }
-
-          @page {
-            size: A4;
-            margin: 10mm;
-          }
-
-          .receipt-card {
-            border: 1px dashed #555;
-            padding: 10px;
-            margin-bottom: 5px;
-            page-break-inside: avoid;
-            break-inside: avoid;
-          }
-
-          .receipts-container {
-            width: 100%;
-          }
-
-          img {
-            max-width: 100%;
-          }
-
-          @media print {
-            body {
-              margin: 0;
-              padding: 0;
-            }
-
-            .receipt-card {
-              page-break-inside: avoid;
-            }
-          }
-        </style>
-      </head>
-
-      <body>
-        ${printContent.innerHTML}
-      </body>
-    </html>
-  `);
-
-    printWindow.document.close();
-
-    printWindow.onload = () => {
-      printWindow.focus();
-
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-    };
   };
 
   // Combined function: Print + Download PDF
@@ -181,6 +136,7 @@ const PrintInvoiceModal = ({ student, onClose }) => {
     }
   };
 
+  // Get print styles for the modal content
   const getPrintStyles = () => {
     return `
       .receipts-container {
@@ -400,44 +356,6 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         color: #000;
         margin-top: 0;
       }
-      
-      /* A4 page settings */
-      @page {
-        size: A4 portrait;
-        margin: 10mm 12mm 10mm 12mm;
-      }
-      
-      @media print {
-        .print-controls {
-          display: none !important;
-        }
-        
-        body {
-          padding: 0 !important;
-          margin: 0 !important;
-          background: white !important;
-          width: 100% !important;
-        }
-        
-        .receipts-container {
-          padding: 0 !important;
-          margin: 0 auto !important;
-          gap: 4px !important;
-        }
-        
-        .receipt-card {
-          box-shadow: none !important;
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-          margin-bottom: 4px !important;
-          border: 1px dashed #555 !important;
-          padding: 8px 12px !important;
-        }
-        
-        .receipt-body {
-          gap: 4px !important;
-        }
-      }
     `;
   };
 
@@ -461,7 +379,7 @@ const PrintInvoiceModal = ({ student, onClose }) => {
                 disabled={isDownloading || isPrinting}
               >
                 <Printer size={18} />
-                Print Only
+                {isPrinting ? "Printing..." : "Print Only"}
               </button>
               <button
                 onClick={downloadPDF}
@@ -483,7 +401,10 @@ const PrintInvoiceModal = ({ student, onClose }) => {
             </div>
           </div>
 
+          {/* This is the print area - it will be used by react-to-print */}
           <div id="invoice-print-area" ref={printRef}>
+            {/* Inject print styles */}
+            <style>{getPrintStyles()}</style>
             <MultiCopyInvoice
               student={student}
               receiptNumber={student.id || student.receiptNumber || 1}
