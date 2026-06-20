@@ -87,7 +87,7 @@ const Invoice = ({ student, receiptNumber }) => {
     <div className="invoice" style={styles.invoice}>
       {/* Header */}
       <div style={styles.header}>
-        <div style={styles.headerLeft}>
+        {/* <div style={styles.headerLeft}>
           <Image
             src="/Trinity.png"
             alt="Trinity School Lahore"
@@ -95,9 +95,9 @@ const Invoice = ({ student, receiptNumber }) => {
             height={100}
             priority
           />
-        </div>
+        </div> */}
         <div style={styles.headerCenter}>
-          <h2 style={styles.schoolName}>The Trinity School</h2>
+          <h2 style={styles.schoolName}>Trinity School</h2>
           <p style={styles.schoolAddress}>Lahore</p>
           <h3 style={styles.receiptTitle}>CASH RECEIPT</h3>
           <p style={styles.receiptSubTitle}>Personal File Copy</p>

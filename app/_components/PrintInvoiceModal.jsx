@@ -69,14 +69,18 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         return;
       }
 
-      // Wait for images to load
+      // Wait for every image to be fully, successfully loaded
       const images = element.querySelectorAll("img");
       await Promise.all(
         Array.from(images).map((img) => {
-          if (img.complete) return Promise.resolve();
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
           return new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve;
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            // nudge it to (re)load in case it's stuck
+            const src = img.src;
+            img.src = "";
+            img.src = src;
           });
         }),
       );
@@ -87,6 +91,7 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         logging: false,
         backgroundColor: "#ffffff",
         allowTaint: true,
+        imageTimeout: 15000,
         width: element.scrollWidth,
         height: element.scrollHeight,
         windowWidth: element.scrollWidth,
@@ -117,7 +122,6 @@ const PrintInvoiceModal = ({ student, onClose }) => {
     } catch (error) {
       console.error("Error generating PDF:", error);
       setIsDownloading(false);
-      // Fallback to print if PDF fails
       handlePrint();
     }
   };
