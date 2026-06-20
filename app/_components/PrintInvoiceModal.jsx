@@ -86,24 +86,94 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         return;
       }
 
+      // Get the actual content without any wrapper elements
+      const contentHTML = printContent.innerHTML;
+
+      // Get all styles from the document
+      const styles = getPrintStyles();
+      
+      // Create a clean print window
       const printWindow = window.open('', '_blank', 'width=900,height=1200');
       
       if (!printWindow) {
+        // Fallback to browser print
         window.print();
         return;
       }
 
-      const styles = getPrintStyles();
-      const contentHTML = printContent.innerHTML;
-
+      // Build complete HTML with proper isolation
       const htmlContent = `
         <!DOCTYPE html>
         <html>
           <head>
             <title>Invoice - ${student.studentName || 'Student'}</title>
             <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>${styles}</style>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              /* Reset all styles */
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              
+              html, body {
+                margin: 0;
+                padding: 0;
+                background: white;
+                font-family: Arial, Helvetica, sans-serif;
+                color: #000;
+                width: 100%;
+              }
+              
+              ${styles}
+              
+              /* Print controls styling */
+              .print-controls {
+                text-align: center;
+                margin-bottom: 15px;
+                padding: 12px;
+                background: white;
+                border-bottom: 2px solid #e5e7eb;
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+              }
+              
+              .print-controls button {
+                padding: 8px 20px;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                margin: 0 8px;
+              }
+              
+              .print-btn {
+                background: #4f46e5;
+                color: white;
+              }
+              
+              .print-btn:hover {
+                background: #4338ca;
+              }
+              
+              .close-btn {
+                background: #6b7280;
+                color: white;
+              }
+              
+              .close-btn:hover {
+                background: #4b5563;
+              }
+              
+              /* Hide controls when printing */
+              @media print {
+                .print-controls {
+                  display: none !important;
+                }
+              }
+            </style>
           </head>
           <body>
             <div class="print-controls">
@@ -120,6 +190,11 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       printWindow.document.write(htmlContent);
       printWindow.document.close();
       printWindow.focus();
+      
+      // Ensure no scrollbars interfere with layout
+      printWindow.document.body.style.margin = '0';
+      printWindow.document.body.style.padding = '0';
+      
     } catch (error) {
       console.error('Error printing:', error);
       window.print();
@@ -144,84 +219,31 @@ const PrintInvoiceModal = ({ student, onClose }) => {
 
   const getPrintStyles = () => {
     return `
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      
-      body {
-        font-family: Arial, Helvetica, sans-serif;
-        background-color: #fff;
-        padding: 20px;
-        color: #111;
-      }
-      
-      .print-controls {
-        text-align: center;
-        margin-bottom: 20px;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        background: white;
-        padding: 15px;
-        border-bottom: 2px solid #e5e7eb;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      }
-      
-      .print-btn, .close-btn {
-        padding: 8px 20px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        margin: 0 8px;
-      }
-      
-      .print-btn {
-        background: #4f46e5;
-        color: white;
-      }
-      
-      .print-btn:hover {
-        background: #4338ca;
-      }
-      
-      .close-btn {
-        background: #6b7280;
-        color: white;
-      }
-      
-      .close-btn:hover {
-        background: #4b5563;
-      }
-      
       .receipts-container {
         max-width: 1000px;
         margin: 0 auto;
+        padding: 10px;
         display: flex;
         flex-direction: column;
-        gap: 4px; /* REDUCED from 12px */
-        padding: 0;
+        gap: 4px;
       }
       
       .receipt-card {
         background: #fff;
-        padding: 8px 12px; /* REDUCED from 15px 20px */
+        padding: 8px 12px;
         border: 1px dashed #777;
         border-radius: 2px;
-        position: relative;
         page-break-inside: avoid;
         break-inside: avoid;
+        margin-bottom: 4px;
       }
       
       .receipt-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        border-bottom: none;
-        padding-bottom: 2px; /* REDUCED from 6px */
-        margin-bottom: 3px; /* REDUCED from 8px */
+        padding-bottom: 2px;
+        margin-bottom: 3px;
       }
       
       .header-left-spacer {
@@ -234,7 +256,7 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       }
       
       .school-title {
-        font-size: 20px; /* REDUCED from 22px */
+        font-size: 20px;
         font-weight: bold;
         margin: 0;
         letter-spacing: 0.5px;
@@ -242,8 +264,8 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       }
       
       .school-location {
-        font-size: 13px; /* REDUCED from 14px */
-        margin: 1px 0 3px 0; /* REDUCED margin */
+        font-size: 13px;
+        margin: 1px 0 3px 0;
         color: #000;
       }
       
@@ -251,9 +273,9 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         display: inline-block;
         border: none;
         font-weight: bold;
-        font-size: 12px; /* REDUCED from 13px */
-        padding: 2px 15px; /* REDUCED from 3px 20px */
-        margin-top: 3px; /* REDUCED from 6px */
+        font-size: 12px;
+        padding: 2px 15px;
+        margin-top: 3px;
         letter-spacing: 0.5px;
         color: #000;
       }
@@ -261,28 +283,28 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       .copy-tag {
         width: 150px;
         text-align: right;
-        font-size: 12px; /* REDUCED from 13px */
+        font-size: 12px;
         font-weight: 500;
         color: #333;
-        margin-top: 3px; /* REDUCED from 5px */
+        margin-top: 3px;
       }
       
       .meta-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 6px; /* REDUCED from 14px */
+        margin-bottom: 6px;
         width: 100%;
       }
       
       .receipt-no-field {
-        font-size: 13px; /* REDUCED from 14px */
+        font-size: 13px;
         text-align: left;
         color: #000;
       }
       
       .dated-field {
-        font-size: 13px; /* REDUCED from 14px */
+        font-size: 13px;
         text-align: right;
         color: #000;
       }
@@ -290,19 +312,19 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       .meta-span {
         font-weight: bold;
         border-bottom: 1px solid #000;
-        padding: 0 6px 2px 6px; /* REDUCED padding-bottom from 4px to 2px */
+        padding: 0 6px 2px 6px;
         display: inline-block;
-        min-width: 100px; /* REDUCED from 120px */
+        min-width: 100px;
         color: #000;
-        line-height: 1.2; /* REDUCED from 1.4 */
+        line-height: 1.2;
       }
       
       .receipt-body {
         display: flex;
         flex-direction: column;
-        gap: 4px; /* REDUCED from 10px to 4px */
-        font-size: 13px; /* REDUCED from 14px */
-        margin-bottom: 8px; /* REDUCED from 15px */
+        gap: 4px;
+        font-size: 13px;
+        margin-bottom: 8px;
       }
       
       .form-line {
@@ -312,74 +334,74 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       
       .label {
         white-space: nowrap;
-        padding-right: 8px; /* REDUCED from 10px */
+        padding-right: 8px;
         color: #000;
         font-weight: normal;
         min-width: 180px;
-        font-size: 13px; /* REDUCED from 14px */
+        font-size: 13px;
       }
       
       .label-small {
         white-space: nowrap;
-        padding-right: 8px; /* REDUCED from 10px */
+        padding-right: 8px;
         color: #000;
         font-weight: normal;
         min-width: 110px;
-        font-size: 13px; /* REDUCED from 14px */
+        font-size: 13px;
       }
       
       .label-tiny {
         white-space: nowrap;
-        padding-right: 6px; /* REDUCED from 8px */
+        padding-right: 6px;
         color: #000;
         font-weight: normal;
         min-width: 55px;
-        font-size: 13px; /* REDUCED from 14px */
+        font-size: 13px;
       }
       
       .fill-blank {
         flex-grow: 1;
         border-bottom: 1px dotted #333;
         font-weight: bold;
-        padding: 0 5px 2px 5px; /* REDUCED padding-bottom from 4px to 2px */
+        padding: 0 5px 2px 5px;
         color: #000;
-        line-height: 1.2; /* REDUCED from 1.4 */
-        font-size: 13px; /* ADDED */
+        line-height: 1.2;
+        font-size: 13px;
       }
       
       .fill-blank-small {
         flex-grow: 1;
         border-bottom: 1px dotted #333;
         font-weight: bold;
-        padding: 0 5px 2px 5px; /* REDUCED padding-bottom from 4px to 2px */
+        padding: 0 5px 2px 5px;
         color: #000;
-        line-height: 1.2; /* REDUCED from 1.4 */
+        line-height: 1.2;
         min-width: 180px;
-        font-size: 13px; /* ADDED */
+        font-size: 13px;
       }
       
       .fill-blank-tiny {
         flex-grow: 1;
         border-bottom: 1px dotted #333;
         font-weight: bold;
-        padding: 0 5px 2px 5px; /* REDUCED padding-bottom from 4px to 2px */
+        padding: 0 5px 2px 5px;
         color: #000;
-        line-height: 1.2; /* REDUCED from 1.4 */
+        line-height: 1.2;
         min-width: 80px;
-        font-size: 13px; /* ADDED */
+        font-size: 13px;
       }
       
       .two-column-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 20px; /* REDUCED from 30px */
+        gap: 20px;
         align-items: baseline;
       }
       
       .three-column-row {
         display: grid;
         grid-template-columns: 2fr 1fr 1fr;
-        gap: 15px; /* REDUCED from 20px */
+        gap: 15px;
         align-items: baseline;
       }
       
@@ -393,7 +415,7 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         display: flex;
         justify-content: space-between;
         align-items: flex-end;
-        margin-top: 8px; /* REDUCED from 20px to 8px */
+        margin-top: 8px;
         padding-top: 0;
         gap: 30px;
       }
@@ -401,18 +423,24 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       .signature-block {
         text-align: center;
         width: 220px;
-        margin-top: 5px; /* REDUCED from 10px */
+        margin-top: 5px;
       }
       
       .signature-line {
         border-top: 1.5px solid #000;
-        padding-top: 4px; /* REDUCED from 6px */
-        font-size: 10px; /* REDUCED from 11px */
+        padding-top: 4px;
+        font-size: 10px;
         font-weight: bold;
         text-transform: uppercase;
         letter-spacing: 0.3px;
         color: #000;
         margin-top: 0;
+      }
+      
+      /* A4 page settings */
+      @page {
+        size: A4 portrait;
+        margin: 10mm 12mm 10mm 12mm;
       }
       
       @media print {
@@ -422,31 +450,29 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         
         body {
           padding: 0 !important;
+          margin: 0 !important;
           background: white !important;
+          width: 100% !important;
+        }
+        
+        .receipts-container {
+          padding: 0 !important;
+          margin: 0 auto !important;
+          gap: 4px !important;
         }
         
         .receipt-card {
           box-shadow: none !important;
           page-break-inside: avoid !important;
           break-inside: avoid !important;
-          margin-bottom: 4px !important; /* REDUCED from 10px */
+          margin-bottom: 4px !important;
           border: 1px dashed #555 !important;
           padding: 8px 12px !important;
-        }
-        
-        .receipts-container {
-          gap: 4px !important; /* REDUCED from 12px */
-          padding: 0 !important;
         }
         
         .receipt-body {
           gap: 4px !important;
         }
-      }
-      
-      @page {
-        margin: 8mm; /* REDUCED from 10mm */
-        size: A4;
       }
     `;
   };
