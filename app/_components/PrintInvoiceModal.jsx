@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useRef, useState } from 'react';
-import { X, Printer, Download } from './Icons';
-import MultiCopyInvoice from './MultiCopyInvoice';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import React, { useRef, useState } from "react";
+import { X, Printer, Download } from "./Icons";
+import MultiCopyInvoice from "./MultiCopyInvoice";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const PrintInvoiceModal = ({ student, onClose }) => {
   const printRef = useRef(null);
@@ -17,16 +17,16 @@ const PrintInvoiceModal = ({ student, onClose }) => {
   const downloadPDF = async () => {
     try {
       setIsDownloading(true);
-      
+
       const element = printRef.current;
       if (!element) {
-        console.error('Print element not found');
+        console.error("Print element not found");
         setIsDownloading(false);
         return;
       }
 
       // Wait for images to load
-      const images = element.querySelectorAll('img');
+      const images = element.querySelectorAll("img");
       await Promise.all(
         Array.from(images).map((img) => {
           if (img.complete) return Promise.resolve();
@@ -34,44 +34,44 @@ const PrintInvoiceModal = ({ student, onClose }) => {
             img.onload = resolve;
             img.onerror = resolve;
           });
-        })
+        }),
       );
 
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         allowTaint: true,
         width: element.scrollWidth,
         height: element.scrollHeight,
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight,
         onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.getElementById('invoice-print-area');
+          const clonedElement = clonedDoc.getElementById("invoice-print-area");
           if (clonedElement) {
-            clonedElement.style.transform = 'none';
+            clonedElement.style.transform = "none";
           }
-        }
+        },
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
+        orientation: "portrait",
+        unit: "px",
         format: [canvas.width * 0.75, canvas.height * 0.75],
-        hotfixes: ['px_scaling'],
+        hotfixes: ["px_scaling"],
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Invoice_${student.studentName || 'Student'}_${Date.now()}.pdf`);
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Invoice_${student.studentName || "Student"}_${Date.now()}.pdf`);
 
       setIsDownloading(false);
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error("Error generating PDF:", error);
       setIsDownloading(false);
       handlePrint();
     }
@@ -79,126 +79,90 @@ const PrintInvoiceModal = ({ student, onClose }) => {
 
   // Function to show print dialog
   const handlePrint = () => {
-    try {
-      const printContent = document.getElementById('invoice-print-area');
-      if (!printContent) {
-        console.error('Print area not found');
-        return;
-      }
+    const printContent = document.getElementById("invoice-print-area");
 
-      // Get the actual content without any wrapper elements
-      const contentHTML = printContent.innerHTML;
-
-      // Get all styles from the document
-      const styles = getPrintStyles();
-      
-      // Create a clean print window
-      const printWindow = window.open('', '_blank', 'width=900,height=1200');
-      
-      if (!printWindow) {
-        // Fallback to browser print
-        window.print();
-        return;
-      }
-
-      // Build complete HTML with proper isolation
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Invoice - ${student.studentName || 'Student'}</title>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              /* Reset all styles */
-              * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-              }
-              
-              html, body {
-                margin: 0;
-                padding: 0;
-                background: white;
-                font-family: Arial, Helvetica, sans-serif;
-                color: #000;
-                width: 100%;
-              }
-              
-              ${styles}
-              
-              /* Print controls styling */
-              .print-controls {
-                text-align: center;
-                margin-bottom: 15px;
-                padding: 12px;
-                background: white;
-                border-bottom: 2px solid #e5e7eb;
-                position: sticky;
-                top: 0;
-                z-index: 1000;
-              }
-              
-              .print-controls button {
-                padding: 8px 20px;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 14px;
-                margin: 0 8px;
-              }
-              
-              .print-btn {
-                background: #4f46e5;
-                color: white;
-              }
-              
-              .print-btn:hover {
-                background: #4338ca;
-              }
-              
-              .close-btn {
-                background: #6b7280;
-                color: white;
-              }
-              
-              .close-btn:hover {
-                background: #4b5563;
-              }
-              
-              /* Hide controls when printing */
-              @media print {
-                .print-controls {
-                  display: none !important;
-                }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="print-controls">
-              <button onclick="window.print();" class="print-btn">🖨️ Print All Copies</button>
-              <button onclick="window.close();" class="close-btn">✖️ Close</button>
-            </div>
-            <div class="receipts-container">
-              ${contentHTML}
-            </div>
-          </body>
-        </html>
-      `;
-
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.focus();
-      
-      // Ensure no scrollbars interfere with layout
-      printWindow.document.body.style.margin = '0';
-      printWindow.document.body.style.padding = '0';
-      
-    } catch (error) {
-      console.error('Error printing:', error);
-      window.print();
+    if (!printContent) {
+      console.error("Print area not found");
+      return;
     }
+
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      alert("Please allow popups for printing.");
+      return;
+    }
+
+    printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Invoice</title>
+
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
+          html,
+          body {
+            width: 100%;
+            background: white;
+            font-family: Arial, sans-serif;
+          }
+
+          @page {
+            size: A4;
+            margin: 10mm;
+          }
+
+          .receipt-card {
+            border: 1px dashed #555;
+            padding: 10px;
+            margin-bottom: 5px;
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+
+          .receipts-container {
+            width: 100%;
+          }
+
+          img {
+            max-width: 100%;
+          }
+
+          @media print {
+            body {
+              margin: 0;
+              padding: 0;
+            }
+
+            .receipt-card {
+              page-break-inside: avoid;
+            }
+          }
+        </style>
+      </head>
+
+      <body>
+        ${printContent.innerHTML}
+      </body>
+    </html>
+  `);
+
+    printWindow.document.close();
+
+    printWindow.onload = () => {
+      printWindow.focus();
+
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    };
   };
 
   // Combined function: Print + Download PDF
@@ -211,7 +175,7 @@ const PrintInvoiceModal = ({ student, onClose }) => {
         setIsPrinting(false);
       }, 500);
     } catch (error) {
-      console.error('Error in print and download:', error);
+      console.error("Error in print and download:", error);
       setIsPrinting(false);
       handlePrint();
     }
@@ -482,14 +446,13 @@ const PrintInvoiceModal = ({ student, onClose }) => {
       <div className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 dark:bg-zinc-900">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-20 rounded-lg p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-          aria-label="Close modal"
+          className="absolute right-4 top-4 z-20 rounded-lg p-1 no-print"
         >
           <X size={20} />
         </button>
 
         <div className="p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 no-print">
             <h2 className="text-2xl font-bold">Registration Invoice</h2>
             <div className="flex flex-wrap gap-2">
               <button
@@ -506,7 +469,7 @@ const PrintInvoiceModal = ({ student, onClose }) => {
                 disabled={isDownloading || isPrinting}
               >
                 <Download size={18} />
-                {isDownloading ? 'Generating...' : 'Download PDF'}
+                {isDownloading ? "Generating..." : "Download PDF"}
               </button>
               <button
                 onClick={handlePrintAndDownload}
@@ -515,15 +478,15 @@ const PrintInvoiceModal = ({ student, onClose }) => {
               >
                 <Printer size={18} />
                 <Download size={18} />
-                {isPrinting ? 'Processing...' : 'Print & Download'}
+                {isPrinting ? "Processing..." : "Print & Download"}
               </button>
             </div>
           </div>
 
           <div id="invoice-print-area" ref={printRef}>
-            <MultiCopyInvoice 
-              student={student} 
-              receiptNumber={student.id || student.receiptNumber || 1} 
+            <MultiCopyInvoice
+              student={student}
+              receiptNumber={student.id || student.receiptNumber || 1}
             />
           </div>
         </div>
