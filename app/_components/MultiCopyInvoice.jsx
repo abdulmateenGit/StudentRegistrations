@@ -78,7 +78,6 @@ const MultiCopyInvoice = ({ student, receiptNumber }) => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "________";
-    // Convert from dd-mmm-yyyy to dd-mmm-yy
     const parts = dateStr.split("-");
     if (parts.length === 3) {
       return `${parts[0]}-${parts[1]}-${parts[2].slice(-2)}`;
@@ -91,9 +90,12 @@ const MultiCopyInvoice = ({ student, receiptNumber }) => {
     return className.toUpperCase();
   };
 
-  const renderSingleReceipt = (copyType, receiptNum) => {
+  const renderSingleReceipt = (copyType, receiptNum, isLast = false) => {
     return (
-      <div style={styles.receiptCard}>
+      <div style={{
+        ...styles.receiptCard,
+        marginBottom: isLast ? '0' : '2px',
+      }}>
         {/* Header Section */}
         <div style={styles.receiptHeader}>
           <div style={styles.headerLeftSpacer}></div>
@@ -105,18 +107,18 @@ const MultiCopyInvoice = ({ student, receiptNumber }) => {
           <div style={styles.copyTag}>{copyType}</div>
         </div>
 
-        {/* Meta Row - Receipt No on left, Dated on right */}
+        {/* Meta Row - Dated on left, Receipt No on right */}
         <div style={styles.metaRow}>
-          <div style={styles.receiptNoField}>
-            Receipt No:{" "}
-            <span style={styles.metaSpan}>
-              {formatReceiptNumber(receiptNum)}
-            </span>
-          </div>
           <div style={styles.datedField}>
             Dated:{" "}
             <span style={styles.metaSpan}>
               {formatDate(student.registrationDate)}
+            </span>
+          </div>
+          <div style={styles.receiptNoField}>
+            Receipt No:{" "}
+            <span style={styles.metaSpan}>
+              {formatReceiptNumber(receiptNum)}
             </span>
           </div>
         </div>
@@ -146,7 +148,7 @@ const MultiCopyInvoice = ({ student, receiptNumber }) => {
             </div>
           </div>
 
-          {/* Rupees in Words and a sum of Rs. in one row - reduced gap */}
+          {/* Rupees in Words and a sum of Rs. in one row */}
           <div style={styles.twoColumnRow}>
             <div style={styles.formLineNoGap}>
               <span style={styles.label}>Rupees in Words:</span>
@@ -190,7 +192,7 @@ const MultiCopyInvoice = ({ student, receiptNumber }) => {
       {renderSingleReceipt("Personal File Copy", receiptNumber + 1)}
 
       {/* Parent Copy */}
-      {renderSingleReceipt("Parent Copy", receiptNumber + 2)}
+      {renderSingleReceipt("Parent Copy", receiptNumber + 2, true)}
     </div>
   );
 };
@@ -201,53 +203,60 @@ const styles = {
     margin: "0 auto",
     display: "flex",
     flexDirection: "column",
-    gap: "2px", // Minimal gap between receipts
+    gap: "0px",
+    padding: "10px",
   },
   receiptCard: {
     background: "#fff",
-    padding: "4px 12px", // Reduced padding for A4 fit
+    padding: "20px 25px",
     border: "1px dashed #777",
     position: "relative",
-    boxShadow: "none", // Removed shadow for print
+    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+    pageBreakInside: "avoid",
+    breakInside: "avoid",
   },
   receiptHeader: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingBottom: "2px",
-    marginBottom: "2px",
+    alignItems: "center",
+    paddingBottom: "10px",
+    marginBottom: "10px",
+    borderBottom: "2px solid #000",
   },
   headerLeftSpacer: {
-    width: "100px",
+    width: "120px",
   },
   headerCenter: {
     textAlign: "center",
     flexGrow: 1,
   },
   schoolTitle: {
-    fontSize: "24px",
-    fontWeight: "normal",
+    fontSize: "26px",
+    fontWeight: "bold",
     margin: "0",
     letterSpacing: "0.5px",
+    color: "#000",
   },
   schoolLocation: {
-    fontSize: "14px",
-    margin: "2px 0 5px 0",
+    fontSize: "16px",
+    margin: "2px 0 8px 0",
+    color: "#333",
   },
   receiptBadge: {
     display: "inline-block",
     border: "2px solid #000",
     fontWeight: "bold",
-    fontSize: "14px",
-    padding: "3px 12px",
+    fontSize: "16px",
+    padding: "4px 20px",
     letterSpacing: "1px",
+    color: "#000",
   },
   copyTag: {
     width: "150px",
     textAlign: "right",
-    fontSize: "13px",
-    fontWeight: "500",
-    marginTop: "5px",
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#333",
   },
   metaRow: {
     display: "flex",
@@ -255,28 +264,31 @@ const styles = {
     alignItems: "center",
     marginBottom: "15px",
     width: "100%",
+    padding: "0 5px",
   },
   receiptNoField: {
-    fontSize: "13px",
-    textAlign: "left",
+    fontSize: "14px",
+    textAlign: "right",
   },
   datedField: {
-    fontSize: "13px",
-    textAlign: "right",
+    fontSize: "14px",
+    textAlign: "left",
   },
   metaSpan: {
     fontWeight: "bold",
     borderBottom: "1px solid #111",
-    paddingBottom: "1px",
+    paddingBottom: "2px",
     display: "inline-block",
-    minWidth: "70px",
+    minWidth: "80px",
+    color: "#000",
   },
   receiptBody: {
     display: "flex",
     flexDirection: "column",
-    gap: "12px", // Reduced gap between form lines
+    gap: "14px",
     fontSize: "14px",
-    marginBottom: "15px",
+    marginBottom: "20px",
+    padding: "0 5px",
   },
   formLine: {
     display: "flex",
@@ -285,70 +297,78 @@ const styles = {
   formLineNoGap: {
     display: "flex",
     alignItems: "baseline",
-    marginBottom: "0", // No extra margin
+    marginBottom: "0",
   },
   label: {
     whiteSpace: "nowrap",
     paddingRight: "10px",
     color: "#444",
-    minWidth: "180px",
-    fontSize: "13px",
+    minWidth: "200px",
+    fontSize: "14px",
   },
   labelSmall: {
     whiteSpace: "nowrap",
     paddingRight: "10px",
     color: "#444",
-    minWidth: "110px",
-    fontSize: "13px",
+    minWidth: "120px",
+    fontSize: "14px",
   },
   labelTiny: {
     whiteSpace: "nowrap",
     paddingRight: "8px",
     color: "#444",
     minWidth: "55px",
-    fontSize: "13px",
+    fontSize: "14px",
   },
   fillBlank: {
     flexGrow: 1,
     borderBottom: "1px dotted #444",
     fontWeight: "bold",
     paddingLeft: "5px",
+    paddingBottom: "2px",
     color: "#000",
+    minHeight: "24px",
   },
   fillBlankNoGap: {
     flexGrow: 1,
     borderBottom: "1px dotted #444",
     fontWeight: "bold",
     paddingLeft: "5px",
+    paddingBottom: "2px",
     color: "#000",
-    paddingBottom: "0", // Reduced padding
+    minHeight: "24px",
   },
   fillBlankSmall: {
     flexGrow: 1,
     borderBottom: "1px dotted #444",
     fontWeight: "bold",
     paddingLeft: "5px",
+    paddingBottom: "2px",
     color: "#000",
     minWidth: "180px",
+    minHeight: "24px",
   },
   fillBlankTiny: {
     flexGrow: 1,
     borderBottom: "1px dotted #444",
     fontWeight: "bold",
     paddingLeft: "5px",
+    paddingBottom: "2px",
     color: "#000",
     minWidth: "80px",
+    minHeight: "24px",
   },
   twoColumnRow: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "10px", // Reduced gap between the two columns
+    gap: "20px",
     alignItems: "center",
   },
   threeColumnRow: {
     display: "grid",
     gridTemplateColumns: "2fr 1fr 1fr",
-    gap: "10px",
+    gap: "15px",
+    alignItems: "center",
   },
   formLineCompact: {
     display: "flex",
@@ -358,22 +378,23 @@ const styles = {
   receiptFooter: {
     display: "flex",
     justifyContent: "space-between",
-    marginTop: "35px",
+    marginTop: "30px",
     paddingTop: "20px",
+    borderTop: "1px solid #ddd",
   },
   signatureBlock: {
     textAlign: "center",
-    width: "200px",
+    width: "220px",
   },
   signatureLine: {
     borderTop: "1px solid #000",
     marginTop: "20px",
-    fontSize: "11px",
+    paddingTop: "12px",
+    fontSize: "12px",
     fontWeight: "bold",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
     color: "#333",
-    paddingTop: "15px",
   },
 };
 
