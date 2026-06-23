@@ -9,6 +9,7 @@ import {
   Search,
   ArrowUpDown,
   X,
+  Download,
 } from "../_components/Icons";
 import { useRouter } from "next/navigation";
 import PrintInvoiceModal from "../_components/PrintInvoiceModal";
@@ -18,6 +19,7 @@ import PasswordResetModal from "../_components/PasswordResetModal";
 
 // Storage key
 const STORAGE_KEY = "student_registrations";
+const RECORDS_PER_PAGE = 10;
 
 // Helper to get registrations
 const getRegistrations = () => {
@@ -67,6 +69,87 @@ const formatCnic = (value) => {
   return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
 };
 
+// Excel export function
+const exportToExcel = (data) => {
+  try {
+    // Dynamically import xlsx
+    const { write, utils } = require("xlsx");
+    
+    // Prepare data for export
+    const exportData = data.map((student, index) => ({
+      "#": index + 1,
+      "Student Name": student.studentName,
+      "DOB": student.dob,
+      "Class": student.class.toUpperCase() || "N/A",
+      "Parent Name": student.parentName,
+      "Parent CNIC": student.parentCnic || "N/A",
+      "Student Contact": student.studentContact,
+      "Parent Contact": student.parentContact,
+      "Registration Fee": `Rs. ${student.registrationFee.toLocaleString()}`,
+      "Registration Date": student.registrationDate,
+    }));
+
+    // Create workbook and worksheet
+    const ws = utils.json_to_sheet(exportData);
+    
+    // Set column widths
+    const columnWidths = [
+      { wch: 5 },   // #
+      { wch: 20 },  // Student Name
+      { wch: 15 },  // DOB
+      { wch: 8 },   // Class
+      { wch: 20 },  // Parent Name
+      { wch: 18 },  // Parent CNIC
+      { wch: 18 },  // Student Contact
+      { wch: 18 },  // Parent Contact
+      { wch: 16 },  // Registration Fee
+      { wch: 18 },  // Registration Date
+    ];
+    ws["!cols"] = columnWidths;
+
+    // Style header row
+    const range = utils.decode_range(ws["!ref"]);
+    for (let col = 0; col <= range.e.c; col++) {
+      const cellAddress = utils.encode_cell({ r: 0, c: col });
+      if (ws[cellAddress]) {
+        ws[cellAddress].s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "4F46E5" } },
+          alignment: { horizontal: "center", vertical: "center" },
+        };
+      }
+    }
+
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, "Registrations");
+    
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().split("T")[0];
+    
+    // Generate binary array
+    const wbout = write(wb, { bookType: "xlsx", type: "array" });
+
+    // Create Blob and trigger download
+    const blob = new Blob([wbout], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `student_registrations_${timestamp}.xlsx`;
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Error exporting to Excel:", error);
+    alert("Failed to export Excel file. Please try again.");
+  }
+};
+
 export default function RegistrationsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -77,10 +160,11 @@ export default function RegistrationsPage() {
   const [showModal, setShowModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     // Load registrations from server API
-    fetch("/api/registrations", { credentials: 'same-origin' })
+    fetch("/api/registrations", { credentials: "same-origin" })
       .then((res) => res.json())
       .then((payload) => {
         const list = payload?.data ?? [];
@@ -93,7 +177,20 @@ export default function RegistrationsPage() {
           const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
           if (!m) return iso;
           const [_, y, mm, dd] = m;
-          const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+          const monthNames = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ];
           const mi = Number(mm) - 1;
           if (mi < 0 || mi > 11) return iso;
           return `${dd}-${monthNames[mi]}-${y}`;
@@ -109,10 +206,12 @@ export default function RegistrationsPage() {
           parentContact: r.parent_contact || r.parentContact || "",
           class: r.class || r.className || "",
           registrationFee: r.registration_fee || r.registrationFee || 0,
-          registrationDate: isoToDisplay(r.registration_date) || r.registrationDate || "",
+          registrationDate:
+            isoToDisplay(r.registration_date) || r.registrationDate || "",
           raw: r,
         }));
         setRegistrations(mapped);
+        setCurrentPage(1); // Reset to first page when data loads
       })
       .catch((err) => {
         console.error("Failed to load registrations:", err);
@@ -169,16 +268,31 @@ export default function RegistrationsPage() {
     registrations.filter(
       (student) =>
         student.studentName.toLowerCase().includes(search.toLowerCase()) ||
-        student.parentName.toLowerCase().includes(search.toLowerCase()),
-    ),
+        student.parentName.toLowerCase().includes(search.toLowerCase())
+    )
   );
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAndSortedStudents.length / RECORDS_PER_PAGE);
+  const startIndex = (currentPage - 1) * RECORDS_PER_PAGE;
+  const endIndex = startIndex + RECORDS_PER_PAGE;
+  const paginatedStudents = filteredAndSortedStudents.slice(
+    startIndex,
+    endIndex
+  );
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
   const handleDelete = (id) => {
-    if (!confirm("Are you sure you want to delete this registration?")) return;
+    if (!confirm("Are you sure you want to delete this registration?"))
+      return;
     // Call API to delete
     fetch("/api/registrations", {
       method: "DELETE",
-      credentials: 'same-origin',
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     })
@@ -228,6 +342,7 @@ export default function RegistrationsPage() {
       setSortBy(sortField);
       setSortOrder("asc");
     }
+    setCurrentPage(1); // Reset to first page when sorting
   };
 
   const getSortIcon = (field) => {
@@ -239,6 +354,10 @@ export default function RegistrationsPage() {
         className={sortOrder === "asc" ? "rotate-0" : "rotate-180"}
       />
     );
+  };
+
+  const handleExportExcel = () => {
+    exportToExcel(filteredAndSortedStudents);
   };
 
   return (
@@ -257,14 +376,24 @@ export default function RegistrationsPage() {
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition hover:bg-emerald-700"
+                title="Download all filtered records as Excel"
+              >
+                <Download size={18} />
+                Download Excel
+              </button>
               <button
                 onClick={() => router.push("/")}
                 className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition hover:bg-indigo-700"
               >
                 New Registration
               </button>
-              <ProfileMenu onResetPassword={() => setShowPasswordResetModal(true)} />
+              <ProfileMenu
+                onResetPassword={() => setShowPasswordResetModal(true)}
+              />
             </div>
           </div>
 
@@ -332,11 +461,11 @@ export default function RegistrationsPage() {
               <table className="min-w-full">
                 <thead className="bg-zinc-100 dark:bg-zinc-800">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
+                    <th className="w-12 px-6 py-4 text-left text-sm font-semibold">
                       #
                     </th>
                     <th
-                      className="px-6 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                      className="w-48 px-6 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                       onClick={() => handleSort("studentName")}
                     >
                       <div className="flex items-center gap-2">
@@ -344,14 +473,17 @@ export default function RegistrationsPage() {
                         {getSortIcon("studentName")}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
+                    <th className="w-32 px-6 py-4 text-left text-sm font-semibold">
                       DOB
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
+                    <th className="w-20 px-6 py-4 text-left text-sm font-semibold">
+                      Class
+                    </th>
+                    <th className="w-40 px-6 py-4 text-left text-sm font-semibold">
                       Parent Name
                     </th>
                     <th
-                      className="px-6 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                      className="w-40 px-6 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                       onClick={() => handleSort("registrationFee")}
                     >
                       <div className="flex items-center gap-2">
@@ -360,7 +492,7 @@ export default function RegistrationsPage() {
                       </div>
                     </th>
                     <th
-                      className="px-6 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                      className="w-40 px-6 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                       onClick={() => handleSort("registrationDate")}
                     >
                       <div className="flex items-center gap-2">
@@ -368,35 +500,40 @@ export default function RegistrationsPage() {
                         {getSortIcon("registrationDate")}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold">
+                    <th className="w-40 px-6 py-4 text-center text-sm font-semibold">
                       Actions
                     </th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {filteredAndSortedStudents.map((student, index) => (
+                  {paginatedStudents.map((student, index) => (
                     <tr
                       key={student.id}
                       className="border-t border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
                     >
-                      <td className="px-6 py-4 text-sm font-medium">
-                        {index + 1}
+                      <td className="w-12 px-6 py-4 text-sm font-medium">
+                        {startIndex + index + 1}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium">
+                      <td className="w-48 px-6 py-4 text-sm font-medium truncate">
                         {student.studentName}
                       </td>
-                      <td className="px-6 py-4 text-sm">{student.dob}</td>
-                      <td className="px-6 py-4 text-sm">
+                      <td className="w-32 px-6 py-4 text-sm whitespace-nowrap">
+                        {student.dob}
+                      </td>
+                      <td className="w-20 px-6 py-4 text-sm font-medium">
+                        {student.class.toUpperCase() || "N/A"}
+                      </td>
+                      <td className="w-40 px-6 py-4 text-sm truncate">
                         {student.parentName}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium">
+                      <td className="w-40 px-6 py-4 text-sm font-medium whitespace-nowrap">
                         Rs. {student.registrationFee.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 text-sm">
+                      <td className="w-40 px-6 py-4 text-sm whitespace-nowrap">
                         {student.registrationDate}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="w-40 px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button
                             onClick={() => handleView(student)}
@@ -445,6 +582,55 @@ export default function RegistrationsPage() {
               )}
             </div>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                Showing {startIndex + 1} to{" "}
+                {Math.min(endIndex, filteredAndSortedStudents.length)} of{" "}
+                {filteredAndSortedStudents.length} registrations
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  Previous
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`min-w-10 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                          currentPage === page
+                            ? "bg-indigo-600 text-white"
+                            : "border border-zinc-200 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <button
+                  onClick={() =>
+                    setCurrentPage(Math.min(totalPages, currentPage + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
