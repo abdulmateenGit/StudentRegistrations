@@ -153,8 +153,8 @@ const exportToExcel = (data) => {
 export default function RegistrationsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("studentName");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortBy, setSortBy] = useState("registrationDate");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [registrations, setRegistrations] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showModal, setShowModal] = useState(false);
