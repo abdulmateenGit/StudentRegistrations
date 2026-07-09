@@ -407,8 +407,8 @@ export default function RegistrationsPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-indigo-50 via-white to-violet-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-indigo-950">
-      <main className="px-4 py-6 sm:px-6">
-        <div className="mx-auto max-w-7xl">
+      <main className="px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-8xl">
           {/* Header */}
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -505,15 +505,15 @@ export default function RegistrationsPage() {
 
           {/* Table Card */}
           <div className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/90 shadow-xl shadow-zinc-200/50 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/90 dark:shadow-none">
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
+            <div className="overflow-hidden">
+              <table className="w-full table-fixed">
                 <thead className="bg-zinc-100 dark:bg-zinc-800">
                   <tr>
                     <th className="w-12 px-6 py-4 text-left text-sm font-semibold">
                       #
                     </th>
                     <th
-                      className="w-48 px-6 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                      className="px-4 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                       onClick={() => handleSort("studentName")}
                     >
                       <div className="flex items-center gap-2">
@@ -521,17 +521,17 @@ export default function RegistrationsPage() {
                         {getSortIcon("studentName")}
                       </div>
                     </th>
-                    <th className="w-32 px-6 py-4 text-left text-sm font-semibold">
+                    <th className="px-4 py-4 text-left text-sm font-semibold">
                       DOB
                     </th>
-                    <th className="w-20 px-6 py-4 text-left text-sm font-semibold">
+                    <th className="px-4 py-4 text-left text-sm font-semibold">
                       Class
                     </th>
-                    <th className="w-40 px-6 py-4 text-left text-sm font-semibold">
+                    <th className="px-4 py-4 text-left text-sm font-semibold">
                       Parent Name
                     </th>
                     <th
-                      className="w-40 px-6 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                      className="px-4 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                       onClick={() => handleSort("registrationFee")}
                     >
                       <div className="flex items-center gap-2">
@@ -540,7 +540,7 @@ export default function RegistrationsPage() {
                       </div>
                     </th>
                     <th
-                      className="w-40 px-6 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                      className="px-4 py-4 text-left text-sm font-semibold cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                       onClick={() => handleSort("registrationDate")}
                     >
                       <div className="flex items-center gap-2">
@@ -548,7 +548,7 @@ export default function RegistrationsPage() {
                         {getSortIcon("registrationDate")}
                       </div>
                     </th>
-                    <th className="w-40 px-6 py-4 text-center text-sm font-semibold">
+                    <th className="px-6 py-4 text-center text-sm font-semibold">
                       Actions
                     </th>
                   </tr>
@@ -560,28 +560,28 @@ export default function RegistrationsPage() {
                       key={student.id}
                       className="border-t border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
                     >
-                      <td className="w-12 px-6 py-4 text-sm font-medium">
+                      <td className="px-4 py-4 text-sm font-medium">
                         {startIndex + index + 1}
                       </td>
-                      <td className="w-48 px-6 py-4 text-sm font-medium truncate">
+                      <td className="px-6 py-4 text-sm font-medium wrap-break-word">
                         {student.studentName}
                       </td>
-                      <td className="w-32 px-6 py-4 text-sm whitespace-nowrap">
+                      <td className="px-4 py-4 text-sm whitespace-nowrap">
                         {student.dob}
                       </td>
-                      <td className="w-20 px-6 py-4 text-sm font-medium">
+                      <td className="px-4 py-4 text-sm font-medium">
                         {student.class.toUpperCase() || "N/A"}
                       </td>
-                      <td className="w-40 px-6 py-4 text-sm truncate">
+                      <td className="px-6 py-4 text-sm wrap-break-word">
                         {student.parentName}
                       </td>
-                      <td className="w-40 px-6 py-4 text-sm font-medium whitespace-nowrap">
+                      <td className="px-4 py-4 text-sm font-medium whitespace-nowrap">
                         Rs. {student.registrationFee.toLocaleString()}
                       </td>
-                      <td className="w-40 px-6 py-4 text-sm whitespace-nowrap">
+                      <td className="px-4 py-4 text-sm whitespace-nowrap">
                         {student.registrationDate}
                       </td>
-                      <td className="w-40 px-6 py-4">
+                      <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button
                             onClick={() => handleView(student)}
