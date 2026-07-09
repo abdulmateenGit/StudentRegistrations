@@ -11,6 +11,7 @@ import {
   X,
   Download,
 } from "../_components/Icons";
+import { createClient } from "../../utils/supabase/client";
 import { useRouter } from "next/navigation";
 import PrintInvoiceModal from "../_components/PrintInvoiceModal";
 import LogoutButton from "../_components/LogoutButton";
@@ -163,39 +164,43 @@ export default function RegistrationsPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    // Load registrations from server API
-    fetch("/api/registrations", { credentials: "same-origin" })
-      .then((res) => res.json())
-      .then((payload) => {
-        const list = payload?.data ?? [];
-        // Map DB fields to UI-friendly keys
-        const isoToDisplay = (iso) => {
-          if (!iso) return "";
-          // if already dd-MMM-YYYY, return as-is
-          if (/^\d{2}-[A-Za-z]{3}-\d{4}$/.test(iso)) return iso;
-          // if ISO YYYY-MM-DD convert to dd-MMM-YYYY
-          const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
-          if (!m) return iso;
-          const [_, y, mm, dd] = m;
-          const monthNames = [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ];
-          const mi = Number(mm) - 1;
-          if (mi < 0 || mi > 11) return iso;
-          return `${dd}-${monthNames[mi]}-${y}`;
-        };
+    const supabase = createClient();
+    let isMounted = true;
+    let channel;
 
+    const isoToDisplay = (iso) => {
+      if (!iso) return "";
+      if (/^\d{2}-[A-Za-z]{3}-\d{4}$/.test(iso)) return iso;
+      const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!m) return iso;
+      const [_, y, mm, dd] = m;
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const mi = Number(mm) - 1;
+      if (mi < 0 || mi > 11) return iso;
+      return `${dd}-${monthNames[mi]}-${y}`;
+    };
+
+    const loadRegistrations = async () => {
+      try {
+        const res = await fetch("/api/registrations", {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        const payload = await res.json();
+        const list = payload?.data ?? [];
         const mapped = list.map((r) => ({
           id: r.id,
           studentName: r.student_name || r.studentName || "",
@@ -210,15 +215,60 @@ export default function RegistrationsPage() {
             isoToDisplay(r.registration_date) || r.registrationDate || "",
           raw: r,
         }));
-        setRegistrations(mapped);
-        setCurrentPage(1); // Reset to first page when data loads
-      })
-      .catch((err) => {
+
+        if (isMounted) {
+          setRegistrations(mapped);
+          setCurrentPage(1);
+        }
+      } catch (err) {
         console.error("Failed to load registrations:", err);
-        // fallback to localStorage
-        const loaded = getRegistrations();
-        setRegistrations(loaded);
-      });
+        if (isMounted) {
+          const loaded = getRegistrations();
+          setRegistrations(loaded);
+        }
+      }
+    };
+
+    loadRegistrations();
+
+    const refreshInterval = window.setInterval(() => {
+      loadRegistrations();
+    }, 5000);
+
+    const subscribeToChanges = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) return;
+
+        channel = supabase.channel("registrations-realtime");
+        channel
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "registrations",
+              filter: `user_id=eq.${session.user.id}`,
+            },
+            () => {
+              loadRegistrations();
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.error("Failed to subscribe to registration updates:", err);
+      }
+    };
+
+    subscribeToChanges();
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(refreshInterval);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   // Sorting function
@@ -280,11 +330,6 @@ export default function RegistrationsPage() {
     startIndex,
     endIndex
   );
-
-  // Reset to first page when search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search]);
 
   const handleDelete = (id) => {
     if (!confirm("Are you sure you want to delete this registration?"))
@@ -408,7 +453,10 @@ export default function RegistrationsPage() {
                 type="text"
                 placeholder="Search student or parent..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full rounded-lg border border-zinc-200 py-2 pl-10 pr-4 text-sm focus:border-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900"
               />
             </div>
