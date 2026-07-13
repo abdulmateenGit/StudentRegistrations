@@ -218,7 +218,6 @@ export default function RegistrationsPage() {
 
         if (isMounted) {
           setRegistrations(mapped);
-          setCurrentPage(1);
         }
       } catch (err) {
         console.error("Failed to load registrations:", err);
@@ -230,10 +229,6 @@ export default function RegistrationsPage() {
     };
 
     loadRegistrations();
-
-    const refreshInterval = window.setInterval(() => {
-      loadRegistrations();
-    }, 5000);
 
     const subscribeToChanges = async () => {
       try {
@@ -264,7 +259,6 @@ export default function RegistrationsPage() {
 
     return () => {
       isMounted = false;
-      window.clearInterval(refreshInterval);
       if (channel) {
         supabase.removeChannel(channel);
       }
