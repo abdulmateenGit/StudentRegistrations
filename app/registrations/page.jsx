@@ -62,7 +62,13 @@ const parseDate = (dateStr) => {
 };
 
 const formatCnic = (value) => {
-  const digits = String(value || "").replace(/\D/g, "").slice(0, 13);
+  if (value === null || value === undefined) return "";
+
+  const digits = String(value)
+    .replace(/\D/g, "")
+    .slice(0, 13);
+
+  if (!digits) return "";
   if (digits.length <= 5) return digits;
   if (digits.length <= 12) {
     return `${digits.slice(0, 5)}-${digits.slice(5)}`;
@@ -75,15 +81,15 @@ const exportToExcel = (data) => {
   try {
     // Dynamically import xlsx
     const { write, utils } = require("xlsx");
-    
+
     // Prepare data for export
     const exportData = data.map((student, index) => ({
       "#": index + 1,
       "Student Name": student.studentName,
-      "DOB": student.dob,
-      "Class": student.class.toUpperCase() || "N/A",
+      DOB: student.dob,
+      Class: student.class.toUpperCase() || "N/A",
       "Parent Name": student.parentName,
-      "Parent CNIC": student.parentCnic || "N/A",
+      "Parent CNIC": formatCnic(student.parentCnic || student.parent_cnic || "") || "N/A",
       "Student Contact": student.studentContact,
       "Parent Contact": student.parentContact,
       "Registration Fee": `Rs. ${student.registrationFee.toLocaleString()}`,
@@ -92,19 +98,19 @@ const exportToExcel = (data) => {
 
     // Create workbook and worksheet
     const ws = utils.json_to_sheet(exportData);
-    
+
     // Set column widths
     const columnWidths = [
-      { wch: 5 },   // #
-      { wch: 20 },  // Student Name
-      { wch: 15 },  // DOB
-      { wch: 8 },   // Class
-      { wch: 20 },  // Parent Name
-      { wch: 18 },  // Parent CNIC
-      { wch: 18 },  // Student Contact
-      { wch: 18 },  // Parent Contact
-      { wch: 16 },  // Registration Fee
-      { wch: 18 },  // Registration Date
+      { wch: 5 }, // #
+      { wch: 20 }, // Student Name
+      { wch: 15 }, // DOB
+      { wch: 8 }, // Class
+      { wch: 20 }, // Parent Name
+      { wch: 18 }, // Parent CNIC
+      { wch: 18 }, // Student Contact
+      { wch: 18 }, // Parent Contact
+      { wch: 16 }, // Registration Fee
+      { wch: 18 }, // Registration Date
     ];
     ws["!cols"] = columnWidths;
 
@@ -123,10 +129,10 @@ const exportToExcel = (data) => {
 
     const wb = utils.book_new();
     utils.book_append_sheet(wb, ws, "Registrations");
-    
+
     // Generate filename with timestamp
     const timestamp = new Date().toISOString().split("T")[0];
-    
+
     // Generate binary array
     const wbout = write(wb, { bookType: "xlsx", type: "array" });
 
@@ -139,10 +145,10 @@ const exportToExcel = (data) => {
     const link = document.createElement("a");
     link.href = url;
     link.download = `student_registrations_${timestamp}.xlsx`;
-    
+
     document.body.appendChild(link);
     link.click();
-    
+
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   } catch (error) {
@@ -206,7 +212,7 @@ export default function RegistrationsPage() {
           studentName: r.student_name || r.studentName || "",
           dob: isoToDisplay(r.dob) || isoToDisplay(r.registration_date) || "",
           parentName: r.parent_name || r.parentName || "",
-          parentCnic: r.parent_cnic || r.parentCnic || "",
+          parentCnic: formatCnic(r.parent_cnic || r.parentCnic || ""),
           studentContact: r.student_contact || r.studentContact || "",
           parentContact: r.parent_contact || r.parentContact || "",
           class: r.class || r.className || "",
@@ -222,7 +228,10 @@ export default function RegistrationsPage() {
       } catch (err) {
         console.error("Failed to load registrations:", err);
         if (isMounted) {
-          const loaded = getRegistrations();
+          const loaded = getRegistrations().map((student) => ({
+            ...student,
+            parentCnic: formatCnic(student.parentCnic || student.parent_cnic || ""),
+          }));
           setRegistrations(loaded);
         }
       }
@@ -232,7 +241,9 @@ export default function RegistrationsPage() {
 
     const subscribeToChanges = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (!session?.user?.id) return;
 
         channel = supabase.channel("registrations-realtime");
@@ -247,7 +258,7 @@ export default function RegistrationsPage() {
             },
             () => {
               loadRegistrations();
-            }
+            },
           )
           .subscribe();
       } catch (err) {
@@ -312,22 +323,23 @@ export default function RegistrationsPage() {
     registrations.filter(
       (student) =>
         student.studentName.toLowerCase().includes(search.toLowerCase()) ||
-        student.parentName.toLowerCase().includes(search.toLowerCase())
-    )
+        student.parentName.toLowerCase().includes(search.toLowerCase()),
+    ),
   );
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredAndSortedStudents.length / RECORDS_PER_PAGE);
+  const totalPages = Math.ceil(
+    filteredAndSortedStudents.length / RECORDS_PER_PAGE,
+  );
   const startIndex = (currentPage - 1) * RECORDS_PER_PAGE;
   const endIndex = startIndex + RECORDS_PER_PAGE;
   const paginatedStudents = filteredAndSortedStudents.slice(
     startIndex,
-    endIndex
+    endIndex,
   );
 
   const handleDelete = (id) => {
-    if (!confirm("Are you sure you want to delete this registration?"))
-      return;
+    if (!confirm("Are you sure you want to delete this registration?")) return;
     // Call API to delete
     fetch("/api/registrations", {
       method: "DELETE",
@@ -355,7 +367,11 @@ export default function RegistrationsPage() {
       parentContact: student.parent_contact ?? student.parentContact ?? "",
       parentCnic: formatCnic(student.parent_cnic ?? student.parentCnic ?? ""),
       class: student.class ?? student.className ?? "",
-      dob: student.dob ?? student.registration_date ?? student.registrationDate ?? "",
+      dob:
+        student.dob ??
+        student.registration_date ??
+        student.registrationDate ??
+        "",
     };
 
     sessionStorage.setItem("editStudent", JSON.stringify(editedStudent));
@@ -657,7 +673,7 @@ export default function RegistrationsPage() {
                       >
                         {page}
                       </button>
-                    )
+                    ),
                   )}
                 </div>
 
@@ -711,7 +727,15 @@ export default function RegistrationsPage() {
                       Class
                     </label>
                     <p className="mt-1 font-medium">
-                      {selectedStudent.class || "N/A"}
+                      {selectedStudent.class.toUpperCase() || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-zinc-500">
+                      Student Contact
+                    </label>
+                    <p className="mt-1 font-medium">
+                      {selectedStudent.studentContact}
                     </p>
                   </div>
                   <div>
@@ -728,14 +752,6 @@ export default function RegistrationsPage() {
                     </label>
                     <p className="mt-1 font-medium">
                       {selectedStudent.parentCnic || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500">
-                      Student Contact
-                    </label>
-                    <p className="mt-1 font-medium">
-                      {selectedStudent.studentContact}
                     </p>
                   </div>
                   <div>
