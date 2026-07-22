@@ -8,73 +8,21 @@ import {
   Trash2,
   Search,
   ArrowUpDown,
-  X,
   Download,
 } from "../_components/Icons";
 import { createClient } from "../../utils/supabase/client";
 import { useRouter } from "next/navigation";
 import PrintInvoiceModal from "../_components/PrintInvoiceModal";
-import LogoutButton from "../_components/LogoutButton";
 import ProfileMenu from "../_components/ProfileMenu";
 import PasswordResetModal from "../_components/PasswordResetModal";
-
-// Storage key
-const STORAGE_KEY = "student_registrations";
-const RECORDS_PER_PAGE = 10;
-
-// Helper to get registrations
-const getRegistrations = () => {
-  if (typeof window === "undefined") return [];
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
-};
-
-// Helper to save registrations
-const saveRegistrations = (registrations) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(registrations));
-};
-
-// Helper function to parse date string (dd-mmm-yyyy) to Date object
-const parseDate = (dateStr) => {
-  const months = {
-    Jan: 0,
-    Feb: 1,
-    Mar: 2,
-    Apr: 3,
-    May: 4,
-    Jun: 5,
-    Jul: 6,
-    Aug: 7,
-    Sep: 8,
-    Oct: 9,
-    Nov: 10,
-    Dec: 11,
-  };
-
-  const parts = dateStr.split("-");
-  if (parts.length === 3) {
-    const day = parseInt(parts[0]);
-    const month = months[parts[1]];
-    const year = parseInt(parts[2]);
-    return new Date(year, month, day);
-  }
-  return new Date(0);
-};
-
-const formatCnic = (value) => {
-  if (value === null || value === undefined) return "";
-
-  const digits = String(value)
-    .replace(/\D/g, "")
-    .slice(0, 13);
-
-  if (!digits) return "";
-  if (digits.length <= 5) return digits;
-  if (digits.length <= 12) {
-    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-  }
-  return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
-};
+import ViewModal from "../_components/Modals/ViewModal";
+import {
+  RECORDS_PER_PAGE,
+  formatCnic,
+  getStoredRegistrations,
+  mapRegistrationFromApi,
+  parseDateString,
+} from "../_models/registrationModel";
 
 // Excel export function
 const exportToExcel = (data) => {
@@ -89,7 +37,8 @@ const exportToExcel = (data) => {
       DOB: student.dob,
       Class: student.class.toUpperCase() || "N/A",
       "Parent Name": student.parentName,
-      "Parent CNIC": formatCnic(student.parentCnic || student.parent_cnic || "") || "N/A",
+      "Parent CNIC":
+        formatCnic(student.parentCnic || student.parent_cnic || "") || "N/A",
       "Student Contact": student.studentContact,
       "Parent Contact": student.parentContact,
       "Registration Fee": `Rs. ${student.registrationFee.toLocaleString()}`,
@@ -228,9 +177,11 @@ export default function RegistrationsPage() {
       } catch (err) {
         console.error("Failed to load registrations:", err);
         if (isMounted) {
-          const loaded = getRegistrations().map((student) => ({
+          const loaded = getStoredRegistrations().map((student) => ({
             ...student,
-            parentCnic: formatCnic(student.parentCnic || student.parent_cnic || ""),
+            parentCnic: formatCnic(
+              student.parentCnic || student.parent_cnic || "",
+            ),
           }));
           setRegistrations(loaded);
         }
@@ -293,8 +244,8 @@ export default function RegistrationsPage() {
 
       case "registrationDate":
         sorted.sort((a, b) => {
-          const dateA = parseDate(a.registrationDate);
-          const dateB = parseDate(b.registrationDate);
+          const dateA = parseDateString(a.registrationDate);
+          const dateB = parseDateString(b.registrationDate);
           if (sortOrder === "asc") {
             return dateA.getTime() - dateB.getTime();
           } else {
@@ -320,11 +271,13 @@ export default function RegistrationsPage() {
 
   // Filter and sort students
   const filteredAndSortedStudents = sortStudents(
-    registrations.filter(
-      (student) =>
-        student.studentName.toLowerCase().includes(search.toLowerCase()) ||
-        student.parentName.toLowerCase().includes(search.toLowerCase()),
-    ),
+    registrations.filter((student) => {
+      const query = search.toLowerCase();
+      return (
+        (student.studentName || "").toLowerCase().includes(query) ||
+        (student.parentName || "").toLowerCase().includes(query)
+      );
+    }),
   );
 
   // Pagination logic
@@ -383,11 +336,6 @@ export default function RegistrationsPage() {
     setShowModal(true);
   };
 
-  const handlePrintInvoice = (student) => {
-    setSelectedStudent(student);
-    setShowInvoiceModal(true);
-  };
-
   const handleSort = (sortField) => {
     if (sortBy === sortField) {
       // Toggle order if same field
@@ -409,6 +357,11 @@ export default function RegistrationsPage() {
         className={sortOrder === "asc" ? "rotate-0" : "rotate-180"}
       />
     );
+  };
+
+  const handlePrintInvoice = (student) => {
+    setSelectedStudent(student);
+    setShowInvoiceModal(true);
   };
 
   const handleExportExcel = () => {
@@ -692,117 +645,15 @@ export default function RegistrationsPage() {
         </div>
       </main>
 
-      {/* View Modal */}
-      {showModal && selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white dark:bg-zinc-900">
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute right-4 top-4 rounded-lg p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="p-6">
-              <h2 className="mb-6 text-2xl font-bold">Student Details</h2>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500">
-                      Student Name
-                    </label>
-                    <p className="mt-1 font-medium">
-                      {selectedStudent.studentName}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500">
-                      Date of Birth
-                    </label>
-                    <p className="mt-1 font-medium">{selectedStudent.dob}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500">
-                      Class
-                    </label>
-                    <p className="mt-1 font-medium">
-                      {selectedStudent.class.toUpperCase() || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500">
-                      Student Contact
-                    </label>
-                    <p className="mt-1 font-medium">
-                      {selectedStudent.studentContact}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500">
-                      Parent Name
-                    </label>
-                    <p className="mt-1 font-medium">
-                      {selectedStudent.parentName}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500">
-                      Parent CNIC
-                    </label>
-                    <p className="mt-1 font-medium">
-                      {selectedStudent.parentCnic || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500">
-                      Parent Contact
-                    </label>
-                    <p className="mt-1 font-medium">
-                      {selectedStudent.parentContact}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500">
-                      Registration Fee
-                    </label>
-                    <p className="mt-1 font-medium">
-                      Rs. {selectedStudent.registrationFee.toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-500">
-                      Registration Date
-                    </label>
-                    <p className="mt-1 font-medium">
-                      {selectedStudent.registrationDate}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                <button
-                  onClick={() => {
-                    handlePrintInvoice(selectedStudent);
-                    setShowModal(false);
-                  }}
-                  className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-                >
-                  Print Invoice
-                </button>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 rounded-lg border border-zinc-200 px-4 py-2 hover:bg-zinc-50"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      <ViewModal
+        student={selectedStudent}
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        onPrintInvoice={(student) => {
+          setSelectedStudent(student);
+          setShowInvoiceModal(true);
+        }}
+      />
       {/* Invoice Modal */}
       {showInvoiceModal && (
         <PrintInvoiceModal

@@ -3,14 +3,20 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+  buildRegistrationPayload,
+  formatDateForDisplay,
+  getRegistrationFee,
+  isValidCnic,
+  isValidDateOfBirth,
+  normalizeDateOfBirth,
+} from "./_models/registrationModel";
 
 const inputClassName =
   "w-full rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-500";
 
 const labelClassName =
   "mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300";
-
-const DISCOUNTED_FEE_CLASSES = new Set(["a1", "a2", "dp1", "dp2"]);
 
 const MONTHS = [
   "Jan",
@@ -26,81 +32,6 @@ const MONTHS = [
   "Nov",
   "Dec",
 ];
-
-const DATE_OF_BIRTH_PATTERN =
-  /^(0[1-9]|[12][0-9]|3[01])-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4})$/;
-
-function normalizeDateOfBirth(value) {
-  const match = value.trim().match(/^(\d{2})-([A-Za-z]{3})-(\d{4})$/);
-  if (!match) return value.trim();
-
-  const month =
-    match[2].charAt(0).toUpperCase() + match[2].slice(1).toLowerCase();
-  return `${match[1]}-${month}-${match[3]}`;
-}
-
-function isValidDateOfBirth(value) {
-  const normalized = normalizeDateOfBirth(value);
-  const match = DATE_OF_BIRTH_PATTERN.exec(normalized);
-  if (!match) return false;
-
-  const day = Number(match[1]);
-  const month = MONTHS.indexOf(match[2]);
-  const year = Number(match[3]);
-  if (month === -1) return false;
-
-  const date = new Date(year, month, day);
-  return (
-    date.getFullYear() === year &&
-    date.getMonth() === month &&
-    date.getDate() === day
-  );
-}
-
-function getRegistrationFee(classValue) {
-  if (!classValue) return null;
-  return DISCOUNTED_FEE_CLASSES.has(classValue) ? 3000 : 10000;
-}
-
-function formatCnic(value) {
-  const digits = value.replace(/\D/g, "").slice(0, 13);
-
-  if (digits.length <= 5) return digits;
-  if (digits.length <= 12) {
-    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-  }
-
-  return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
-}
-
-function isValidCnic(value) {
-  return /^[0-9]{5}-[0-9]{7}-[0-9]$/.test(value);
-}
-
-// Storage key for localStorage
-const STORAGE_KEY = "student_registrations";
-
-// Helper to get registrations from localStorage
-const getRegistrations = () => {
-  if (typeof window === "undefined") return [];
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
-};
-
-// Helper to save registration
-const saveRegistration = (registration) => {
-  const registrations = getRegistrations();
-  registrations.push(registration);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(registrations));
-};
-
-// Format date for display
-const formatDate = (date) => {
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = MONTHS[date.getMonth()];
-  const year = date.getFullYear();
-  return `${day}-${month}-${year}`;
-};
 
 export default function Home() {
   const router = useRouter();
@@ -187,44 +118,18 @@ export default function Home() {
       return;
     }
 
-    // Sanitize numeric-like fields and normalize DOB for DB
-    const digitsOnly = (s) => String(s || "").replace(/\D+/g, "");
-    const toNumberOrNull = (s) => {
-      const d = digitsOnly(s);
-      return d ? Number(d) : null;
-    };
-
-    const parseDobToIso = (dobStr) => {
-      if (!dobStr) return null;
-      const parts = dobStr.split("-");
-      if (parts.length !== 3) return null;
-      const day = Number(parts[0]);
-      const mon = parts[1];
-      const yr = Number(parts[2]);
-      const monthIndex = MONTHS.indexOf(mon);
-      if (monthIndex === -1 || Number.isNaN(day) || Number.isNaN(yr)) return null;
-      // YYYY-MM-DD
-      const mm = String(monthIndex + 1).padStart(2, "0");
-      const dd = String(day).padStart(2, "0");
-      return `${yr}-${mm}-${dd}`;
-    };
-
-    // Create registration object
-    const registration = {
-      id: isEditing && editingId ? editingId : Date.now(),
+    const registration = buildRegistrationPayload({
+      id: isEditing && editingId ? editingId : undefined,
       studentName: formData.studentName,
-      // store DOB as ISO date (YYYY-MM-DD) to match DB `date` column
-      dob: parseDobToIso(dateOfBirth) || dateOfBirth,
+      dob: dateOfBirth,
       parentName: formData.parentName,
-      // CNIC and phone numbers: strip formatting and send numeric when possible
-      parentCnic: toNumberOrNull(parentCnic),
-      studentContact: toNumberOrNull(formData.studentContact),
-      parentContact: toNumberOrNull(formData.parentContact),
-      class: selectedClass,
-      registrationFee: registrationFee,
-      registrationDate: formatDate(new Date()),
-      timestamp: new Date().toISOString(),
-    };
+      parentCnic,
+      studentContact: formData.studentContact,
+      parentContact: formData.parentContact,
+      className: selectedClass,
+      registrationFee,
+      registrationDate: formatDateForDisplay(new Date()),
+    });
 
     // Send to server API which will insert or update into Supabase
     fetch('/api/registrations', {
@@ -269,7 +174,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-indigo-50 via-white to-violet-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-indigo-950">
+    <div className="min-h-full bg-linear-to-br from-indigo-50 via-white to-violet-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-indigo-950">
       <main className="flex min-h-full flex-col items-center px-4 py-4 sm:px-6">
         <div className="w-full max-w-3xl">
           <div className="mb-4 flex justify-center">
@@ -398,8 +303,8 @@ export default function Home() {
                     Select class
                   </option>
                   <option value="nursery-pyp">Nursery - PYP</option>
-                  <option value="kg-pyp">KG - PYP</option>
-                  <option value="preparatory-pyp">Preparatory - PYP</option>
+                  <option value="kg-pyp">Pre K - PYP</option>
+                  <option value="preparatory-pyp">Kindergarten - PYP</option>
                   <option value="grade-1-pyp">Grade 1 - PYP</option>
                   <option value="grade-2-pyp">Grade 2 - PYP</option>
                   <option value="grade-3-pyp">Grade 3 - PYP</option>
