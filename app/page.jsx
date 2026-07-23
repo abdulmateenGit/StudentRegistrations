@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   buildRegistrationPayload,
+  formatCnic,
   formatDateForDisplay,
   getRegistrationFee,
   isValidCnic,
@@ -95,6 +96,11 @@ export default function Home() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleParentCnicChange = (e) => {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 13);
+    setParentCnic(digits);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -103,7 +109,7 @@ export default function Home() {
       return;
     }
 
-    if (!isValidCnic(parentCnic)) {
+    if (!isValidCnic(formatCnic(parentCnic))) {
       alert("Please enter a valid CNIC number in format: XXXXX-XXXXXXX-X");
       return;
     }
@@ -353,8 +359,8 @@ export default function Home() {
                   inputMode="numeric"
                   autoComplete="off"
                   placeholder="XXXXX-XXXXXXX-X"
-                  value={parentCnic}
-                  onChange={(e) => setParentCnic(formatCnic(e.target.value))}
+                  value={formatCnic(parentCnic)}
+                  onChange={handleParentCnicChange}
                   maxLength={15}
                   pattern="[0-9]{5}-[0-9]{7}-[0-9]"
                   title="Enter a 13-digit CNIC number"
