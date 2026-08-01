@@ -324,6 +324,7 @@ export default function Home() {
                   <option value="grade-10-hs">Grade 10 - HS</option>
                   <option value="grade-11-hs">Grade 11 - HS</option>
                   <option value="grade-12-hs">Grade 12 - HS</option>
+                  <option value="class-11">Class 11</option>
                   <option value="dp1">Class 11 - DP1</option>
                   <option value="dp2">Class 12 - DP2</option>
                   <option value="a1">A1</option>
@@ -434,7 +435,7 @@ export default function Home() {
                   className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400"
                 >
                   {registrationFee === 3000
-                    ? "Rs. 3,000 for A1, A2, Class 11 - DP1, and Class 12 - DP2."
+                    ? "Rs. 3,000 for A1, A2, Class 11, Class 11 - DP1, and Class 12 - DP2."
                     : registrationFee === 10000
                       ? "Rs. 10,000 for all other classes."
                       : "Fee is set automatically based on the selected class."}

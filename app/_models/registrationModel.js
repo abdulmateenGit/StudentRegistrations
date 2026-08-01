@@ -19,7 +19,7 @@ export const MONTHS = [
 export const DATE_OF_BIRTH_PATTERN =
   /^(0[1-9]|[12][0-9]|3[01])-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4})$/;
 
-export const DISCOUNTED_FEE_CLASSES = new Set(["a1", "a2", "dp1", "dp2"]);
+export const DISCOUNTED_FEE_CLASSES = new Set(["a1", "a2","class-11", "dp1", "dp2"]);
 
 export function normalizeDateOfBirth(value) {
   const raw = String(value ?? "").trim();
