@@ -309,8 +309,8 @@ export default function Home() {
                     Select class
                   </option>
                   <option value="nursery-pyp">Nursery - PYP</option>
-                  <option value="kg-pyp">Pre K - PYP</option>
-                  <option value="preparatory-pyp">Kindergarten - PYP</option>
+                  <option value="pre-k-pyp">Pre K - PYP</option>
+                  <option value="kindergarten-pyp">Kindergarten - PYP</option>
                   <option value="grade-1-pyp">Grade 1 - PYP</option>
                   <option value="grade-2-pyp">Grade 2 - PYP</option>
                   <option value="grade-3-pyp">Grade 3 - PYP</option>
